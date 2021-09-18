@@ -60,7 +60,7 @@ defmodule Core.Authorizer.Utils.ValueObject do
 
   def cast_and_apply(input, mod, action) do
     input
-    |> encode()
+    |> encode(:atom_keys)
     |> mod.changeset()
     |> Changeset.apply_action(action)
   end

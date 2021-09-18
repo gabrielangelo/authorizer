@@ -1,4 +1,4 @@
-defmodule Core.Authorizer.Model.Transaction do
+defmodule Model.Transaction do
   @moduledoc """
     transaciton module
   """
@@ -12,6 +12,13 @@ defmodule Core.Authorizer.Model.Transaction do
     merchant
     amount
     time
+    processed_in_time_window_context
+  >a
+
+  @required_fields ~w<
+  merchant
+  amount
+  time
   >a
 
   @primary_key false
@@ -19,12 +26,13 @@ defmodule Core.Authorizer.Model.Transaction do
     field(:merchant, :string)
     field(:amount, :integer)
     field(:time, :naive_datetime_usec)
+    field(:processed_in_time_window_context, :boolean, virtual: true, default: false)
   end
 
   @spec changeset(data :: t(), params :: map()) :: Ecto.Changeset.t()
   def changeset(data \\ %__MODULE__{}, params) do
     data
     |> cast(params, @fields)
-    |> validate_required(@fields)
+    |> validate_required(@required_fields)
   end
 end

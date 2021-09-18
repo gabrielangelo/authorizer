@@ -1,4 +1,4 @@
-defmodule Core.Authorizer.Model.Account do
+defmodule Model.Account do
   @moduledoc """
   Account module
   """

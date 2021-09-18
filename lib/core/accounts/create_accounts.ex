@@ -2,7 +2,7 @@ defmodule Core.Accounts.CreateAccount do
   @moduledoc """
   Implements accounts Business Logic
   """
-  alias Core.Authorizer.Model.Account
+  alias Model.Account
   alias Core.Authorizer.Utils.ValueObject
 
   @spec execute([map()]) :: {:error, Ecto.Changeset.t()} | [map()]
