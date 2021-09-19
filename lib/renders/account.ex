@@ -6,14 +6,15 @@ defmodule Renders.Account do
   alias Model.Account
 
   def render(accounts) when is_list(accounts) do
-    Enum.each(accounts, &render/1)
+    accounts
+    |> Enum.reverse()
+    |> Enum.each(&render/1)
   end
 
   def render(%Account{} = account) do
     IO.puts(
       %{
         "account" => %{
-          "virtual-id" => account.virtual_id,
           "active-card" => account.active_card,
           "available-limit" => account.available_limit,
           "violations" => account.violations

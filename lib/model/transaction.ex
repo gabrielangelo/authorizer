@@ -25,7 +25,7 @@ defmodule Model.Transaction do
   embedded_schema do
     field(:merchant, :string)
     field(:amount, :integer)
-    field(:time, :naive_datetime_usec)
+    field(:time, :utc_datetime)
     field(:processed_in_time_window_context, :boolean, virtual: true, default: false)
   end
 
