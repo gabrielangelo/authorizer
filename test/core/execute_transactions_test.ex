@@ -15,7 +15,9 @@ defmodule AuthorizerTest do
       %{"merchant" => "McDonald's", "amount" => 20, "time" => time},
       %{"merchant" => "Subway", "amount" => 20, "time" => time},
       %{"merchant" => "Burger King", "amount" => 10, "time" => now}
-    ] |> IO.inspect(label: :transactions_test)
+    ]
+
+    # |> IO.inspect(label: :transactions_test)
 
     ExecuteTransactions.execute(account, transactions)
   end

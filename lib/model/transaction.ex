@@ -12,7 +12,8 @@ defmodule Model.Transaction do
     merchant
     amount
     time
-    processed_in_time_window_context
+    is_processed
+    rejected
   >a
 
   @required_fields ~w<
@@ -26,7 +27,9 @@ defmodule Model.Transaction do
     field(:merchant, :string)
     field(:amount, :integer)
     field(:time, :utc_datetime)
-    field(:processed_in_time_window_context, :boolean, virtual: true, default: false)
+    field(:is_processed, :boolean, virtual: true, default: false)
+    field(:rejected, :boolean, virtual: true, default: false)
+
   end
 
   @spec changeset(data :: t(), params :: map()) :: Ecto.Changeset.t()
