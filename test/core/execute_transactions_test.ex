@@ -34,8 +34,6 @@ defmodule AuthorizerTest do
       %{"merchant" => "Burger King", "amount" => 15, "time" => time},
     ]
 
-    # |> IO.inspect(label: :transactions_test)
-
     ExecuteTransactions.execute(account, transactions)
   end
 
@@ -43,15 +41,6 @@ defmodule AuthorizerTest do
     account = %{"active-card" => true, "available-limit" => 100}
     now = DateTime.utc_now()
     time = now |> DateTime.add(:timer.minutes(2) * -1, :millisecond) |> DateTime.to_iso8601()
-
-
-    # {"transaction": {"merchant": "McDonald's", "amount": 10, "time": "2019-02-13T11:00:01.000Z"}}
-    # {"transaction": {"merchant": "Burger King", "amount": 20, "time": "2019-02-13T11:00:02.000Z"}}
-    # {"transaction": {"merchant": "Burger King", "amount": 5, "time": "2019-02-13T11:00:07.000Z"}}
-    # {"transaction": {"merchant": "Burger King", "amount": 5, "time": "2019-02-13T11:00:08.000Z"}}
-    # {"transaction": {"merchant": "Burger King", "amount": 150, "time": "2019-02-13T11:00:18.000Z"}}
-    # {"transaction": {"merchant": "Burger King", "amount": 190, "time": "2019-02-13T11:00:22.000Z"}}
-    # {"transaction": {"merchant": "Burger King", "amount": 15, "time": "2019-02-13T12:00:27.000Z"}}
 
     transactions = [
       %{"merchant" => "McDonald's", "amount" => 10, "time" => time},
@@ -63,8 +52,22 @@ defmodule AuthorizerTest do
       %{"merchant" => "Burger King", "amount" => 15, "time" => now |> DateTime.add(:timer.hours(1), :millisecond) |> DateTime.to_iso8601()}
     ]
 
-    # |> IO.inspect(label: :transactions_test)
+    ExecuteTransactions.execute(account, transactions)
+  end
+
+  test "test insuficient limit" do
+    account = %{"active-card" => true, "available-limit" => 1000}
+    now = DateTime.utc_now()
+    time = now |> DateTime.add(:timer.minutes(2) * -1, :millisecond) |> DateTime.to_iso8601()
+
+    transactions = [
+      %{"merchant" => "Vivara", "amount" => 1250, "time" => time},
+      %{"merchant" => "Samsung", "amount" => 2500, "time" => time},
+      %{"merchant" => "Nike", "amount" => 800, "time" => time},
+      %{"merchant" => "Uber", "amount" => 80, "time" => time}
+    ]
 
     ExecuteTransactions.execute(account, transactions)
+    |> Renders.Account.render()
   end
 end

@@ -2,14 +2,14 @@ defmodule Core.Transactions.ExecuteTransactions do
   @moduledoc """
   Transactions module
   """
-
-  @window_time_in_seconds 120
-
   alias Model.Transaction
   alias Model.Account
   alias Core.Authorizer.Utils.ValueObject
-  alias Renders.Account, as: RendersAccount
 
+  @window_time_in_seconds 120
+  @max_transactions_processed_in_window 3
+
+  @spec execute(account :: map(), transactions :: [map()]) :: [Account.t()]
   def execute(account, transactions) do
     now = DateTime.utc_now()
 
@@ -18,7 +18,7 @@ defmodule Core.Transactions.ExecuteTransactions do
          {:ok, account} <- check_account_has_active_card(account),
          {:ok, transactions} <- apply_changes_in_transactions(transactions),
          {:ok, result} <- process_transactions(account, transactions, now) do
-      RendersAccount.render(result.account_movements_log)
+      result.account_movements_log
     else
       {:error, %Ecto.Changeset{valid?: false}} ->
         %{"account" => %{"violations" => ["account-not-initialized"]}}
@@ -67,28 +67,26 @@ defmodule Core.Transactions.ExecuteTransactions do
         processed_transactions = history.transactions_log
         cont = history.cont
 
-        # IO.inspect({
-        #   is_inside_delay?(time_ago, now, transaction.time),
-        #   transaction,
-        #   check_limit(account, transaction),
-        #   cont,
-        #   index
-        # })
-        # IO.inspect("##############################################")
-
         case {
           is_inside_delay?(time_ago, now, transaction.time),
           check_limit(account, transaction)
         } do
-          {true, %Account{violations: violations}} when cont == 3 and index > 2 ->
+          {true, %Account{violations: violations}}
+          when cont == @max_transactions_processed_in_window and index > 2 ->
+            new_movement_account = %{account | violations: []}
+
+            {k_movement, transaction} =
+              apply_double_transaction(transaction, new_movement_account, history, now)
+
             Map.merge(
               history,
               %{
                 account_movements_log: [
                   Map.merge(
-                    account,
+                    k_movement,
                     %{
-                      violations: ["high_frequency_small_interval" | violations]
+                      violations:
+                        ["high_frequency_small_interval" | k_movement.violations] ++ violations
                     }
                   )
                   | accounts_movements
@@ -100,8 +98,9 @@ defmodule Core.Transactions.ExecuteTransactions do
               }
             )
 
-          {true, %Account{violations: _} = new_account_movement} when cont <= 3 ->
-            {k_movement, transaction} = c_double_transaction(transaction, account, history, now)
+          {true, %Account{violations: _} = new_account_movement} ->
+            {k_movement, transaction} =
+              apply_double_transaction(transaction, account, history, now)
 
             if transaction.rejected do
               Map.merge(history, %{
@@ -132,7 +131,7 @@ defmodule Core.Transactions.ExecuteTransactions do
     end)
   end
 
-  defp c_double_transaction(transaction, account, data, now) do
+  defp apply_double_transaction(transaction, account, data, now) do
     transaction_info_log_in_last_time = get_merchant_and_amount(data.transactions_log, now)
 
     case Map.get(
@@ -152,13 +151,13 @@ defmodule Core.Transactions.ExecuteTransactions do
   end
 
   defp check_limit(
-         %Account{available_limit: available_limit, violations: violations} = account,
+         %Account{available_limit: available_limit, violations: _} = account,
          %Transaction{
            amount: amount
          }
        )
        when amount > available_limit,
-       do: %{account | violations: ["insufficient-limit" | violations]}
+       do: %{account | violations: ["insufficient-limit"]}
 
   defp check_limit(
          %Account{available_limit: available_limit, violations: []} = account,
