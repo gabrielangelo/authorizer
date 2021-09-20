@@ -46,21 +46,17 @@ defmodule Core.Transactions.ExecuteTransactions do
 
   defp process_transactions(account, transactions, now) do
     result =
-      account
-      |> process_settlements_with_time_window(transactions, now)
+      %{account_movements_log: [account], transactions: transactions, transactions_log: []}
+      |> process_settlements_with_time_window(now)
       |> process_settlements()
 
     {:ok, result}
   end
 
-  defp process_settlements_with_time_window(account, transactions, now) do
-    %{account_movements_log: [account], transactions: transactions, transactions_log: []}
-    |> check_high_frequency_small_interval(now)
-  end
-
-  defp check_high_frequency_small_interval(data, now) do
+  defp process_settlements_with_time_window(data, now) do
     time_ago = now |> DateTime.add(-@window_time_in_seconds, :second)
     transactions = data.transactions
+    data = Map.put(data, :cont, 0)
 
     transactions
     |> Enum.with_index()
@@ -69,20 +65,22 @@ defmodule Core.Transactions.ExecuteTransactions do
         [account | _] = accounts_movements = history.account_movements_log
 
         processed_transactions = history.transactions_log
+        cont = history.cont
+
+        # IO.inspect({
+        #   is_inside_delay?(time_ago, now, transaction.time),
+        #   transaction,
+        #   check_limit(account, transaction),
+        #   cont,
+        #   index
+        # })
+        # IO.inspect("##############################################")
 
         case {
           is_inside_delay?(time_ago, now, transaction.time),
           check_limit(account, transaction)
         } do
-          {true, %Account{violations: []} = account} when index <= 2 ->
-            Map.merge(history, %{
-              account_movements_log: [account | accounts_movements],
-              transactions_log: [
-                %{transaction | is_processed: true} | processed_transactions
-              ]
-            })
-
-          {true, %Account{violations: violations} = account} ->
+          {true, %Account{violations: violations}} when cont == 3 and index > 2 ->
             Map.merge(
               history,
               %{
@@ -90,8 +88,7 @@ defmodule Core.Transactions.ExecuteTransactions do
                   Map.merge(
                     account,
                     %{
-                      violations: ["high_frequency_small_interval" | violations],
-                      available_limit: account.available_limit + transaction.amount
+                      violations: ["high_frequency_small_interval" | violations]
                     }
                   )
                   | accounts_movements
@@ -102,6 +99,24 @@ defmodule Core.Transactions.ExecuteTransactions do
                 ]
               }
             )
+
+          {true, %Account{violations: _} = new_account_movement} when cont <= 3 ->
+            {k_movement, transaction} = c_double_transaction(transaction, account, history, now)
+
+            if transaction.rejected do
+              Map.merge(history, %{
+                account_movements_log: [k_movement | accounts_movements],
+                transactions_log: [transaction | processed_transactions]
+              })
+            else
+              Map.merge(history, %{
+                account_movements_log: [new_account_movement | accounts_movements],
+                transactions_log: [
+                  %{transaction | is_processed: true} | processed_transactions
+                ],
+                cont: history.cont + 1
+              })
+            end
 
           {false, _} ->
             Map.merge(
@@ -117,72 +132,24 @@ defmodule Core.Transactions.ExecuteTransactions do
     end)
   end
 
-  # defp check_doubled_transaction(data, now) do
-  #   time_ago = now |> DateTime.add(-@window_time_in_seconds, :second)
-  #   account_movement_log = data.account_movements_log
-  #   transactions_log = data.transactions_log
-  #   processed_transactions = []
+  defp c_double_transaction(transaction, account, data, now) do
+    transaction_info_log_in_last_time = get_merchant_and_amount(data.transactions_log, now)
 
-  #   transaction_info_log_in_last_time = get_merchant_and_amount(transactions_log, now)
-  #   # |> IO.inspect(label: :transaction_info_log_in_last_time)
+    case Map.get(
+           transaction_info_log_in_last_time,
+           "#{transaction.merchant}/#{transaction.amount}",
+           []
+         ) do
+      [_ | _] ->
+        {
+          %{account | violations: ["doubled-transaction" | account.violations]},
+          %{transaction | rejected: true}
+        }
 
-  #   transactions_log
-  #   |> Enum.reduce_while(data, fn transaction, history ->
-  #     [account | _] = history.account_movements_log
-
-  #     # IO.inspect(
-  #     #   {is_inside_delay?(time_ago, now, transaction.time), check_limit(account, transaction),
-  #     #    Map.get(
-  #     #      transaction_info_log_in_last_time,
-  #     #      "#{transaction.merchant}#{transaction.amount}",
-  #     #      []
-  #     #    )}
-  #     # )
-
-  #     case {
-  #       is_inside_delay?(time_ago, now, transaction.time),
-  #       check_limit(account, transaction),
-  #       Map.get(
-  #         transaction_info_log_in_last_time,
-  #         "#{transaction.merchant}#{transaction.amount}",
-  #         []
-  #       )
-  #     } do
-  #       {true, %Account{violations: []} = account, []} ->
-  #         {:cont,
-  #          Map.merge(history, %{
-  #            account_movements_log: [account | account_movement_log],
-  #            transactions_log: [
-  #              %{transaction | is_processed: true} | processed_transactions
-  #            ]
-  #          })}
-
-  #       {true, %Account{violations: violations} = account, [_ | _]} ->
-  #         account_movement = %{
-  #           account
-  #           | is_processed: true,
-  #             violations: ["doubled-transaction" | violations]
-  #         }
-
-  #         {:cont,
-  #          Map.merge(history, %{
-  #            account_movements_log: [account_movement | account_movement_log],
-  #            transactions_log: [
-  #              %{transaction | is_processed: true} | processed_transactions
-  #            ]
-  #          })}
-
-  #       {false, _, _} ->
-  #         {:cont,
-  #          Map.merge(history, %{
-  #            account_movements_log: account_movement_log,
-  #            transactions_log: [
-  #              %{transaction | is_processed: true} | processed_transactions
-  #            ]
-  #          })}
-  #     end
-  #   end)
-  # end
+      [] ->
+        {account, transaction}
+    end
+  end
 
   defp check_limit(
          %Account{available_limit: available_limit, violations: violations} = account,
@@ -193,11 +160,23 @@ defmodule Core.Transactions.ExecuteTransactions do
        when amount > available_limit,
        do: %{account | violations: ["insufficient-limit" | violations]}
 
-  defp check_limit(%Account{available_limit: available_limit} = account, %Transaction{
-         amount: amount
-       })
+  defp check_limit(
+         %Account{available_limit: available_limit, violations: []} = account,
+         %Transaction{
+           amount: amount
+         }
+       )
        when amount <= available_limit,
        do: %{account | available_limit: available_limit - amount}
+
+  defp check_limit(
+         %Account{available_limit: available_limit, violations: [_ | _]} = account,
+         %Transaction{
+           amount: amount
+         }
+       )
+       when amount <= available_limit,
+       do: %{account | available_limit: available_limit - amount, violations: []}
 
   defp is_inside_delay?(time_ago, now, transaction_time) do
     time_ago = DateTime.truncate(time_ago, :millisecond)
@@ -221,11 +200,11 @@ defmodule Core.Transactions.ExecuteTransactions do
     time_ago = now |> DateTime.add(-@window_time_in_seconds, :second)
 
     transactions
-    |> Enum.reduce_while([], fn transaction, transaction_info_log ->
+    |> Enum.reduce([], fn transaction, transaction_info_log ->
       if is_inside_delay?(time_ago, now, transaction.time) do
-        {:cont, [transaction | transaction_info_log]}
+        [transaction | transaction_info_log]
       else
-        {:cont, transaction_info_log}
+        transaction_info_log
       end
     end)
     |> Enum.group_by(&"#{&1.merchant}/#{&1.amount}")
@@ -243,18 +222,18 @@ defmodule Core.Transactions.ExecuteTransactions do
         {true, false, _} ->
           history
 
-        {false, false, %Account{violations: [_ | _]} = account} ->
+        {false, false, %Account{} = new_account_movement} ->
           Map.merge(
             history,
             %{
-              account_movements_log: [%{account | violations: []} | account_movement_log],
+              account_movements_log: [new_account_movement | account_movement_log],
               transactions_log: [
                 %{transaction | is_processed: true} | processed_transactions
               ]
             }
           )
 
-        {false, true, %Account{violations: [_ | _]}} ->
+        {false, true, %Account{}} ->
           history
       end
     end)
