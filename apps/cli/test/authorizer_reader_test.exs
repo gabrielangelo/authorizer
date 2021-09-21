@@ -1,6 +1,6 @@
 defmodule Cli.Test.AuthorizeReaderTest do
   @moduledoc """
-
+  Authorizer reader tests
   """
   use ExUnit.Case
 

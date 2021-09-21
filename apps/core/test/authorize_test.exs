@@ -58,7 +58,7 @@ defmodule Core.Test.AuthorizerTest do
            ] == AuthorizeTransactions.execute(account, transactions)
   end
 
-  test test "test doubled-transaction" do
+  test "test doubled-transaction" do
     account = %{"active-card" => true, "available-limit" => 100}
     now = DateTime.utc_now()
     time = now |> DateTime.add(:timer.minutes(2) * -1, :millisecond) |> DateTime.to_iso8601()

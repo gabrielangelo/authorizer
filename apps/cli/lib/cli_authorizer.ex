@@ -1,6 +1,6 @@
 defmodule Cli.Authorizer do
   @moduledoc """
-    Auhtorizer cli module
+    Authorizer cli module
   """
 
   alias Cli.Readers.AuhtorizerReader
@@ -10,6 +10,7 @@ defmodule Cli.Authorizer do
 
   require Logger
 
+  @spec run :: :ok
   def run do
     Logger.info("getting file info and processing")
     IO.read(:stdio, :line)
@@ -18,9 +19,9 @@ defmodule Cli.Authorizer do
     |> AccountRender.render()
   end
 
-  def read_stdin_line(:eof, lines), do: Enum.reverse(lines)
+  defp read_stdin_line(:eof, lines), do: Enum.reverse(lines)
 
-  def read_stdin_line(data, lines) when is_binary(data) do
+  defp read_stdin_line(data, lines) when is_binary(data) do
     line = Jason.decode!(data)
     read_stdin_line(IO.read(:stdio, :line), [line | lines])
   end
