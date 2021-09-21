@@ -6,9 +6,7 @@ defmodule Renders.Account do
   alias Model.Account
 
   def render(accounts) when is_list(accounts) do
-    accounts
-    |> Enum.reverse()
-    |> Enum.each(&render/1)
+    Enum.each(accounts, &render/1)
   end
 
   def render(%Account{} = account) do

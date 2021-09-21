@@ -29,7 +29,6 @@ defmodule Model.Transaction do
     field(:time, :utc_datetime)
     field(:is_processed, :boolean, virtual: true, default: false)
     field(:rejected, :boolean, virtual: true, default: false)
-
   end
 
   @spec changeset(data :: t(), params :: map()) :: Ecto.Changeset.t()

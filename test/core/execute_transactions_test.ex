@@ -1,6 +1,6 @@
 defmodule AuthorizerTest do
   use ExUnit.Case
-  alias Core.Transactions.ExecuteTransactions
+  alias Core.Transactions.AuthorizeTransactions
   alias Model.Account
   # doctest Authorizer
 
@@ -17,9 +17,44 @@ defmodule AuthorizerTest do
       %{"merchant" => "Burger King", "amount" => 10, "time" => now}
     ]
 
-    # |> IO.inspect(label: :transactions_test)
-
-    ExecuteTransactions.execute(account, transactions)
+    assert [
+             %Model.Account{
+               active_card: true,
+               available_limit: 100,
+               violations: [],
+               virtual_id: nil
+             },
+             %Model.Account{
+               active_card: true,
+               available_limit: 80,
+               violations: [],
+               virtual_id: nil
+             },
+             %Model.Account{
+               active_card: true,
+               available_limit: 60,
+               violations: [],
+               virtual_id: nil
+             },
+             %Model.Account{
+               active_card: true,
+               available_limit: 40,
+               violations: [],
+               virtual_id: nil
+             },
+             %Model.Account{
+               active_card: true,
+               available_limit: 40,
+               violations: ["high_frequency_small_interval"],
+               virtual_id: nil
+             },
+             %Model.Account{
+               active_card: true,
+               available_limit: 30,
+               violations: [],
+               virtual_id: nil
+             }
+           ] == AuthorizeTransactions.execute(account, transactions)
   end
 
   test "test doubled-transaction" do
@@ -31,10 +66,41 @@ defmodule AuthorizerTest do
       %{"merchant" => "Burger King", "amount" => 20, "time" => time},
       %{"merchant" => "McDonald's", "amount" => 10, "time" => time},
       %{"merchant" => "Burger King", "amount" => 20, "time" => time},
-      %{"merchant" => "Burger King", "amount" => 15, "time" => time},
+      %{"merchant" => "Burger King", "amount" => 15, "time" => time}
     ]
 
-    ExecuteTransactions.execute(account, transactions)
+    assert [
+             %Model.Account{
+               active_card: true,
+               available_limit: 100,
+               violations: [],
+               virtual_id: nil
+             },
+             %Model.Account{
+               active_card: true,
+               available_limit: 80,
+               violations: [],
+               virtual_id: nil
+             },
+             %Model.Account{
+               active_card: true,
+               available_limit: 70,
+               violations: [],
+               virtual_id: nil
+             },
+             %Model.Account{
+               active_card: true,
+               available_limit: 50,
+               violations: ["doubled-transaction"],
+               virtual_id: nil
+             },
+             %Model.Account{
+               active_card: true,
+               available_limit: 35,
+               violations: [],
+               virtual_id: nil
+             }
+           ] == AuthorizeTransactions.execute(account, transactions)
   end
 
   test "test multiple logics" do
@@ -49,10 +115,63 @@ defmodule AuthorizerTest do
       %{"merchant" => "Burger King", "amount" => 5, "time" => time},
       %{"merchant" => "Burger King", "amount" => 150, "time" => time},
       %{"merchant" => "Burger King", "amount" => 190, "time" => time},
-      %{"merchant" => "Burger King", "amount" => 15, "time" => now |> DateTime.add(:timer.hours(1), :millisecond) |> DateTime.to_iso8601()}
+      %{
+        "merchant" => "Burger King",
+        "amount" => 15,
+        "time" => now |> DateTime.add(:timer.hours(1), :millisecond) |> DateTime.to_iso8601()
+      }
     ]
 
-    ExecuteTransactions.execute(account, transactions)
+    assert [
+             %Model.Account{
+               active_card: true,
+               available_limit: 100,
+               violations: [],
+               virtual_id: nil
+             },
+             %Model.Account{
+               active_card: true,
+               available_limit: 90,
+               violations: [],
+               virtual_id: nil
+             },
+             %Model.Account{
+               active_card: true,
+               available_limit: 70,
+               violations: [],
+               virtual_id: nil
+             },
+             %Model.Account{
+               active_card: true,
+               available_limit: 65,
+               violations: [],
+               virtual_id: nil
+             },
+             %Model.Account{
+               active_card: true,
+               available_limit: 65,
+               violations: ["high_frequency_small_interval", "doubled-transaction"],
+               virtual_id: nil
+             },
+             %Model.Account{
+               active_card: true,
+               available_limit: 65,
+               violations: ["high_frequency_small_interval", "insufficient-limit"],
+               virtual_id: nil
+             },
+             %Model.Account{
+               active_card: true,
+               available_limit: 65,
+               violations: ["high_frequency_small_interval", "insufficient-limit"],
+               virtual_id: nil
+             },
+             %Model.Account{
+               active_card: true,
+               available_limit: 50,
+               violations: [],
+               virtual_id: nil
+             }
+           ] == AuthorizeTransactions.execute(account, transactions)
   end
 
   test "test insuficient limit" do
@@ -67,7 +186,58 @@ defmodule AuthorizerTest do
       %{"merchant" => "Uber", "amount" => 80, "time" => time}
     ]
 
-    ExecuteTransactions.execute(account, transactions)
-    |> Renders.Account.render()
+    [
+      %Model.Account{
+        active_card: true,
+        available_limit: 1000,
+        violations: [],
+        virtual_id: nil
+      },
+      %Model.Account{
+        active_card: true,
+        available_limit: 1000,
+        violations: ["insufficient-limit"],
+        virtual_id: nil
+      },
+      %Model.Account{
+        active_card: true,
+        available_limit: 1000,
+        violations: ["insufficient-limit"],
+        virtual_id: nil
+      },
+      %Model.Account{
+        active_card: true,
+        available_limit: 200,
+        violations: [],
+        virtual_id: nil
+      },
+      %Model.Account{
+        active_card: true,
+        available_limit: 120,
+        violations: [],
+        virtual_id: nil
+      }
+    ] ==
+      AuthorizeTransactions.execute(account, transactions)
+  end
+
+  test "test account-not-initialized" do
+    time = DateTime.utc_now()
+
+    transactions = [
+      %{"merchant" => "Vivara", "amount" => 1250, "time" => time},
+      %{"merchant" => "Samsung", "amount" => 2500, "time" => time},
+      %{"merchant" => "Nike", "amount" => 800, "time" => time},
+      %{"merchant" => "Uber", "amount" => 80, "time" => time}
+    ]
+
+    assert [
+             %Model.Account{
+               active_card: nil,
+               available_limit: nil,
+               violations: ["account-not-initialized"],
+               virtual_id: nil
+             }
+           ] == AuthorizeTransactions.execute(nil, transactions)
   end
 end
