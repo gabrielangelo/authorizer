@@ -1,7 +1,8 @@
 defmodule Core.AuthorizerTest do
   use ExUnit.Case
-  alias Core.Transactions.AuthorizeTransactions
+
   alias Core.Accounts.Model.Account
+  alias Core.Transactions.AuthorizeTransactions
   # doctest Authorizer
 
   test "test high_frequency_small_interval" do
@@ -310,31 +311,31 @@ defmodule Core.AuthorizerTest do
     ]
 
     assert [
-      %Core.Accounts.Model.Account{
-        active_card: true,
-        available_limit: 1000,
-        violations: [],
-        virtual_id: nil
-      },
-      %Core.Accounts.Model.Account{
-        active_card: true,
-        available_limit: 200,
-        violations: [],
-        virtual_id: nil
-      },
-      %Core.Accounts.Model.Account{
-        active_card: true,
-        available_limit: 1000,
-        violations: ["insufficient-limit"],
-        virtual_id: nil
-      },
-      %Core.Accounts.Model.Account{
-        active_card: true,
-        available_limit: 1000,
-        violations: ["insufficient-limit"],
-        virtual_id: nil
-      }
-    ]
-     == AuthorizeTransactions.execute(account, transactions)
+             %Core.Accounts.Model.Account{
+               active_card: true,
+               available_limit: 1000,
+               violations: [],
+               virtual_id: nil
+             },
+             %Core.Accounts.Model.Account{
+               active_card: true,
+               available_limit: 200,
+               violations: [],
+               virtual_id: nil
+             },
+             %Core.Accounts.Model.Account{
+               active_card: true,
+               available_limit: 1000,
+               violations: ["insufficient-limit"],
+               virtual_id: nil
+             },
+             %Core.Accounts.Model.Account{
+               active_card: true,
+               available_limit: 1000,
+               violations: ["insufficient-limit"],
+               virtual_id: nil
+             }
+           ] ==
+             AuthorizeTransactions.execute(account, transactions)
   end
 end

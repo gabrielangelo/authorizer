@@ -1,6 +1,6 @@
-defmodule Authorizer do
+defmodule Core do
   @moduledoc """
-  Documentation for `Authorizer`.
+  Documentation for `Core`.
   """
 
   @doc """
@@ -8,7 +8,7 @@ defmodule Authorizer do
 
   ## Examples
 
-      iex> Authorizer.hello()
+      iex> Core.hello()
       :world
 
   """

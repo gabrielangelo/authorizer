@@ -2,8 +2,9 @@ defmodule Core.Transactions.AuthorizeTransactions do
   @moduledoc """
   Transactions module
   """
-  alias Core.Transactions.Model.Transaction
+
   alias Core.Accounts.Model.Account
+  alias Core.Transactions.Model.Transaction
   alias Core.Utils.ValueObject
 
   @window_time_in_seconds 120

@@ -3,7 +3,10 @@ defmodule Cli.Readers.AuhtorizerReader do
     Read entries in auhtorizer
   """
 
+  def re([]), do: []
+
   def re(data) do
+    Logger.info("Mounting authorizer data")
     [f_item | head] = data
 
     test =
