@@ -1,4 +1,4 @@
-defmodule Core.Renders.Account do
+defmodule Cli.Renders.Account do
   @moduledoc """
   Renders account
   """

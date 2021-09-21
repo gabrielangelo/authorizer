@@ -211,6 +211,7 @@ defmodule Core.Transactions.AuthorizeTransactions do
     data.transactions_log
     |> Enum.reduce(data, fn transaction, history ->
       [account | _] = account_movement_log
+
       processed_transactions = history.transactions_log
 
       case {transaction.is_processed, transaction.rejected, check_limit(account, transaction)} do
@@ -218,12 +219,14 @@ defmodule Core.Transactions.AuthorizeTransactions do
           history
 
         {false, false, {%Account{} = new_account_movement, _}} ->
+          is_processed = if(new_account_movement.violations == [], do: true, else: false)
+
           Map.merge(
             history,
             %{
-              account_movements_log: [new_account_movement | account_movement_log],
+              account_movements_log: [new_account_movement | history.account_movements_log],
               transactions_log: [
-                %{transaction | is_processed: true} | processed_transactions
+                %{transaction | is_processed: is_processed} | processed_transactions
               ]
             }
           )

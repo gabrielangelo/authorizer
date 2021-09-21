@@ -258,4 +258,83 @@ defmodule Core.AuthorizerTest do
              }
            ] == AuthorizeTransactions.execute(nil, transactions)
   end
+
+  test "test card-not-active" do
+    account = %{"active-card" => false, "available-limit" => 100}
+    now = DateTime.utc_now()
+
+    transactions = [
+      %{
+        "merchant" => "Burger King",
+        "amount" => 20,
+        "time" => now
+      },
+      %{
+        "merchant" => "Habbib's",
+        "amount" => 15,
+        "time" => now
+      }
+    ]
+
+    assert [
+             %Core.Accounts.Model.Account{
+               active_card: false,
+               available_limit: 100,
+               violations: [],
+               virtual_id: nil
+             },
+             %Core.Accounts.Model.Account{
+               active_card: false,
+               available_limit: 100,
+               violations: ["card-not-active"],
+               virtual_id: nil
+             },
+             %Core.Accounts.Model.Account{
+               active_card: false,
+               available_limit: 100,
+               violations: ["card-not-active"],
+               virtual_id: nil
+             }
+           ] ==
+             AuthorizeTransactions.execute(account, transactions)
+  end
+
+  test "test insufficient-limit" do
+    account = %{"active-card" => true, "available-limit" => 1000}
+    now = DateTime.utc_now()
+
+    transactions = [
+      %{"merchant" => "Vivara", "amount" => 1250, "time" => now},
+      %{"merchant" => "Samsung", "amount" => 2500, "time" => now},
+      %{"merchant" => "Nike", "amount" => 800, "time" => now}
+    ]
+
+    assert [
+      %Core.Accounts.Model.Account{
+        active_card: true,
+        available_limit: 1000,
+        violations: [],
+        virtual_id: nil
+      },
+      %Core.Accounts.Model.Account{
+        active_card: true,
+        available_limit: 200,
+        violations: [],
+        virtual_id: nil
+      },
+      %Core.Accounts.Model.Account{
+        active_card: true,
+        available_limit: 1000,
+        violations: ["insufficient-limit"],
+        virtual_id: nil
+      },
+      %Core.Accounts.Model.Account{
+        active_card: true,
+        available_limit: 1000,
+        violations: ["insufficient-limit"],
+        virtual_id: nil
+      }
+    ]
+     == AuthorizeTransactions.execute(account, transactions)
+  end
 end
