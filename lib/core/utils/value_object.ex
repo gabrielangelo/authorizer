@@ -1,4 +1,4 @@
-defmodule Core.Authorizer.Utils.ValueObject do
+defmodule Core.Utils.ValueObject do
   @moduledoc "ValueObject helper"
 
   alias Ecto.Changeset

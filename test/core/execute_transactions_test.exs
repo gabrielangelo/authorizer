@@ -1,7 +1,7 @@
-defmodule AuthorizerTest do
+defmodule Core.AuthorizerTest do
   use ExUnit.Case
   alias Core.Transactions.AuthorizeTransactions
-  alias Model.Account
+  alias Core.Accounts.Model.Account
   # doctest Authorizer
 
   test "test high_frequency_small_interval" do
@@ -18,37 +18,37 @@ defmodule AuthorizerTest do
     ]
 
     assert [
-             %Model.Account{
+             %Account{
                active_card: true,
                available_limit: 100,
                violations: [],
                virtual_id: nil
              },
-             %Model.Account{
+             %Account{
                active_card: true,
                available_limit: 80,
                violations: [],
                virtual_id: nil
              },
-             %Model.Account{
+             %Account{
                active_card: true,
                available_limit: 60,
                violations: [],
                virtual_id: nil
              },
-             %Model.Account{
+             %Account{
                active_card: true,
                available_limit: 40,
                violations: [],
                virtual_id: nil
              },
-             %Model.Account{
+             %Account{
                active_card: true,
                available_limit: 40,
                violations: ["high_frequency_small_interval"],
                virtual_id: nil
              },
-             %Model.Account{
+             %Account{
                active_card: true,
                available_limit: 30,
                violations: [],
@@ -70,31 +70,31 @@ defmodule AuthorizerTest do
     ]
 
     assert [
-             %Model.Account{
+             %Account{
                active_card: true,
                available_limit: 100,
                violations: [],
                virtual_id: nil
              },
-             %Model.Account{
+             %Account{
                active_card: true,
                available_limit: 80,
                violations: [],
                virtual_id: nil
              },
-             %Model.Account{
+             %Account{
                active_card: true,
                available_limit: 70,
                violations: [],
                virtual_id: nil
              },
-             %Model.Account{
+             %Account{
                active_card: true,
                available_limit: 50,
                violations: ["doubled-transaction"],
                virtual_id: nil
              },
-             %Model.Account{
+             %Account{
                active_card: true,
                available_limit: 35,
                violations: [],
@@ -123,49 +123,49 @@ defmodule AuthorizerTest do
     ]
 
     assert [
-             %Model.Account{
+             %Account{
                active_card: true,
                available_limit: 100,
                violations: [],
                virtual_id: nil
              },
-             %Model.Account{
+             %Account{
                active_card: true,
                available_limit: 90,
                violations: [],
                virtual_id: nil
              },
-             %Model.Account{
+             %Account{
                active_card: true,
                available_limit: 70,
                violations: [],
                virtual_id: nil
              },
-             %Model.Account{
+             %Account{
                active_card: true,
                available_limit: 65,
                violations: [],
                virtual_id: nil
              },
-             %Model.Account{
+             %Account{
                active_card: true,
                available_limit: 65,
                violations: ["high_frequency_small_interval", "doubled-transaction"],
                virtual_id: nil
              },
-             %Model.Account{
+             %Account{
                active_card: true,
                available_limit: 65,
                violations: ["high_frequency_small_interval", "insufficient-limit"],
                virtual_id: nil
              },
-             %Model.Account{
+             %Account{
                active_card: true,
                available_limit: 65,
                violations: ["high_frequency_small_interval", "insufficient-limit"],
                virtual_id: nil
              },
-             %Model.Account{
+             %Account{
                active_card: true,
                available_limit: 50,
                violations: [],
@@ -187,31 +187,31 @@ defmodule AuthorizerTest do
     ]
 
     [
-      %Model.Account{
+      %Account{
         active_card: true,
         available_limit: 1000,
         violations: [],
         virtual_id: nil
       },
-      %Model.Account{
+      %Account{
         active_card: true,
         available_limit: 1000,
         violations: ["insufficient-limit"],
         virtual_id: nil
       },
-      %Model.Account{
+      %Account{
         active_card: true,
         available_limit: 1000,
         violations: ["insufficient-limit"],
         virtual_id: nil
       },
-      %Model.Account{
+      %Account{
         active_card: true,
         available_limit: 200,
         violations: [],
         virtual_id: nil
       },
-      %Model.Account{
+      %Account{
         active_card: true,
         available_limit: 120,
         violations: [],
@@ -232,7 +232,25 @@ defmodule AuthorizerTest do
     ]
 
     assert [
-             %Model.Account{
+             %Account{
+               active_card: nil,
+               available_limit: nil,
+               violations: ["account-not-initialized"],
+               virtual_id: nil
+             },
+             %Account{
+               active_card: nil,
+               available_limit: nil,
+               violations: ["account-not-initialized"],
+               virtual_id: nil
+             },
+             %Account{
+               active_card: nil,
+               available_limit: nil,
+               violations: ["account-not-initialized"],
+               virtual_id: nil
+             },
+             %Account{
                active_card: nil,
                available_limit: nil,
                violations: ["account-not-initialized"],

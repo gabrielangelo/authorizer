@@ -1,4 +1,4 @@
-defmodule Model.Account do
+defmodule Core.Accounts.Model.Account do
   @moduledoc """
   Account module
   """

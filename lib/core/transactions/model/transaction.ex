@@ -1,4 +1,4 @@
-defmodule Model.Transaction do
+defmodule Core.Transactions.Model.Transaction do
   @moduledoc """
     transaciton module
   """

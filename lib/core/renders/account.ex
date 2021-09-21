@@ -1,9 +1,9 @@
-defmodule Renders.Account do
+defmodule Core.Renders.Account do
   @moduledoc """
   Renders account
   """
 
-  alias Model.Account
+  alias Core.Accounts.Model.Account
 
   def render(accounts) when is_list(accounts) do
     Enum.each(accounts, &render/1)
