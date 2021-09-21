@@ -17,13 +17,14 @@ defmodule Core.Accounts.CreateAccount do
 
   defp constraint_unique_account_virtual_id(accounts) do
     accounts
-    |> Enum.group_by(& &1.virtual_id)
+    |> Enum.group_by(fn {:ok, account} -> account.virtual_id end, &elem(&1, 1))
     |> Enum.map(fn
       {_, [account | _] = list_ids} when length(list_ids) > 1 ->
-        %{account | violations: ["account-already-initialized"]}
+        Enum.map(1..length(list_ids), fn _ -> %{account | violations: ["account-already-initialized"]} end)
 
       {_, [account | _] = list_ids} when length(list_ids) == 1 ->
         account
     end)
+    |> List.flatten()
   end
 end

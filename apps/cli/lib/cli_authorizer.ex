@@ -21,10 +21,7 @@ defmodule Cli.Authorizer do
   def read_stdin_line(:eof, lines), do: Enum.reverse(lines)
 
   def read_stdin_line(data, lines) when is_binary(data) do
-    line =
-      data
-      |> Jason.decode!()
-
+    line = Jason.decode!(data)
     read_stdin_line(IO.read(:stdio, :line), [line | lines])
   end
 
@@ -66,4 +63,6 @@ defmodule Cli.Authorizer do
   end
 end
 
-Cli.Authorizer.run()
+if Mix.env() != :test  do
+  Cli.Authorizer.run()
+end

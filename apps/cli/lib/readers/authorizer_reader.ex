@@ -3,6 +3,8 @@ defmodule Cli.Readers.AuhtorizerReader do
     Read entries in auhtorizer
   """
 
+  require Logger
+
   def re([]), do: []
 
   def re(data) do
@@ -33,6 +35,8 @@ defmodule Cli.Readers.AuhtorizerReader do
   end
 
   defp read(%{"account" => account_data}, items) do
+    Logger.info("mounting account params #{inspect(account_data)}")
+
     transactions =
       Enum.reduce_while(items, [], fn item, acc ->
         case Map.get(item, "transaction") do
