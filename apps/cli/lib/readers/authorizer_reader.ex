@@ -22,7 +22,7 @@ defmodule Cli.Readers.AuhtorizerReader do
 
     data
     |> receive_data(test)
-    |> Enum.filter(&(not is_nil(&1)))
+    |> Enum.filter(&(not is_nil(&1))) |> Enum.reverse()
   end
 
   defp receive_data([], test), do: test
@@ -37,13 +37,7 @@ defmodule Cli.Readers.AuhtorizerReader do
   defp read(%{"account" => account_data}, items) do
     Logger.info("mounting account params #{inspect(account_data)}")
 
-    transactions =
-      Enum.reduce_while(items, [], fn item, acc ->
-        case Map.get(item, "transaction") do
-          nil -> {:halt, acc}
-          transaction_data -> {:cont, [transaction_data | acc]}
-        end
-      end)
+    transactions = get_transactions(items)
 
     if transactions == [] do
       accounts =
@@ -62,16 +56,21 @@ defmodule Cli.Readers.AuhtorizerReader do
 
   defp read(%{"transaction" => _}, _), do: nil
 
-  defp read_first_item(%{"transaction" => _}, items) do
-    transactions =
-      Enum.reduce_while(items, [], fn item, acc ->
-        case Map.get(item, "transaction") do
-          nil -> {:halt, acc}
-          transaction_data -> {:cont, [transaction_data | acc]}
-        end
-      end)
+  defp get_transactions(items) do
+    items
+    |> Enum.reduce_while([], fn item, acc ->
+      case Map.get(item, "transaction") do
+        nil -> {:halt, acc}
+        transaction_data -> {:cont, [transaction_data | acc]}
+      end
+    end)
+    |> Enum.reverse()
+  end
 
-    {%{}, transactions, "non_initialized_accounts_with_transactions"}
+  defp read_first_item(%{"transaction" => transaction}, items) do
+    transactions = get_transactions(items)
+
+    {%{}, [transaction | transactions], "non_initialized_accounts_with_transactions"}
   end
 
   defp read_first_item(%{"account" => account}, _), do: {account, [], "account_as_first_index"}

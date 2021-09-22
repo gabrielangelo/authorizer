@@ -2,7 +2,7 @@ defmodule Cli.Test.AuthorizeReaderTest do
   @moduledoc """
   Authorizer reader tests
   """
-   use ExUnit.Case, async: true
+  use ExUnit.Case, async: true
 
   alias Cli.Readers.AuhtorizerReader
 
@@ -26,6 +26,14 @@ defmodule Cli.Test.AuthorizeReaderTest do
     ]
 
     assert [
+             {%{},
+              [
+                %{
+                  "merchant" => "Uber Eats",
+                  "amount" => 25,
+                  "time" => "2020-12-01T11:07:00.000Z"
+                }
+              ], "non_initialized_accounts_with_transactions"},
              {%{"active-card" => true, "available-limit" => 225},
               [
                 %{
@@ -33,8 +41,7 @@ defmodule Cli.Test.AuthorizeReaderTest do
                   "merchant" => "Uber Eats",
                   "time" => "2020-12-01T11:07:00.000Z"
                 }
-              ], "accounts_with_transactions"},
-             {%{}, [], "non_initialized_accounts_with_transactions"}
+              ], "accounts_with_transactions"}
            ] == AuhtorizerReader.re(transactions)
   end
 end

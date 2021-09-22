@@ -6,12 +6,8 @@ defmodule Cli.Renders.Account do
   alias Core.Accounts.Model.Account
 
   def render(accounts) when is_list(accounts) and accounts != [] do
-    accounts = accounts
-    |> Enum.map(&render/1)
-
-    Enum.each(accounts, &IO.puts/1)
-
-    accounts
+    Enum.map(accounts, &render/1)
+    |> List.flatten()
   end
 
   def render([]), do: []

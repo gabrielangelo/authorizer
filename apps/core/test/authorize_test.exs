@@ -91,13 +91,13 @@ defmodule Core.Test.AuthorizerTest do
              },
              %Account{
                active_card: true,
-               available_limit: 50,
+               available_limit: 70,
                violations: ["doubled-transaction"],
                virtual_id: nil
              },
              %Account{
                active_card: true,
-               available_limit: 35,
+               available_limit: 55,
                violations: [],
                virtual_id: nil
              }

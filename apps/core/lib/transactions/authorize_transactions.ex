@@ -14,7 +14,6 @@ defmodule Core.Transactions.AuthorizeTransactions do
 
   @spec execute(account :: map(), transactions :: [map()]) :: [Account.t()]
   def execute(account, transactions) do
-
     now = DateTime.utc_now()
     account = account || %{}
 
@@ -96,8 +95,15 @@ defmodule Core.Transactions.AuthorizeTransactions do
             )
 
           {true, {%Account{violations: _} = new_account_movement, transaction}} ->
-            {k_movement, transaction} =
+            {%Account{violations: violations} = k_movement, transaction} =
               apply_double_transaction(transaction, new_account_movement, history, now)
+
+            k_movement =
+              if violations != [] do
+                %{account | violations: violations}
+              else
+                k_movement
+              end
 
             if transaction.rejected do
               Map.merge(history, %{
