@@ -4,7 +4,6 @@ defmodule Cli.Test.CliAuthorizerTest do
   """
 
   use ExUnit.Case, async: true
-  alias Cli.Authorizer
 
   import Mox
   setup :verify_on_exit!
@@ -92,8 +91,8 @@ defmodule Cli.Test.CliAuthorizerTest do
 
   test "test high-frequency-small-interval" do
     now = DateTime.utc_now()
-    time = now |> DateTime.add(:timer.minutes(2) * -1, :millisecond) |> DateTime.to_iso8601()
     now_iso = now |> DateTime.to_iso8601()
+    time = now |> DateTime.add(:timer.minutes(2) * -1, :millisecond) |> DateTime.to_iso8601()
 
     expect(StdinMock, :read_data, fn ->
       [
@@ -120,7 +119,6 @@ defmodule Cli.Test.CliAuthorizerTest do
   test "test doubled-transaction" do
     now = DateTime.utc_now()
     time = now |> DateTime.add(:timer.minutes(2) * -1, :millisecond) |> DateTime.to_iso8601()
-    now_iso = now |> DateTime.to_iso8601()
 
     expect(StdinMock, :read_data, fn ->
       [
@@ -129,7 +127,6 @@ defmodule Cli.Test.CliAuthorizerTest do
         "{\"transaction\": {\"merchant\": \"McDonald's\", \"amount\": 10, \"time\": \"#{time}\"}}\n",
         "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 20, \"time\": \"#{time}\"}}\n",
         "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 15, \"time\": \"#{time}\"}}\n"
-        # "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 10, \"time\": \"#{now_iso}\"}}"
       ]
     end)
 
@@ -147,7 +144,6 @@ defmodule Cli.Test.CliAuthorizerTest do
     now = DateTime.utc_now()
     time = now |> DateTime.add(:timer.minutes(2) * -1, :millisecond) |> DateTime.to_iso8601()
     time_after = now |> DateTime.add(:timer.hours(1), :millisecond) |> DateTime.to_iso8601()
-    now_iso = now |> DateTime.to_iso8601()
 
     expect(StdinMock, :read_data, fn ->
       [
@@ -158,9 +154,7 @@ defmodule Cli.Test.CliAuthorizerTest do
         "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 5, \"time\": \"#{time}\"}}\n",
         "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 150, \"time\": \"#{time}\"}}\n",
         "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 190, \"time\": \"#{time}\"}}\n",
-        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 15, \"time\": \"#{
-          time_after
-        }\"}}\n"
+        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 15, \"time\": \"#{time_after}\"}}\n"
       ]
     end)
 

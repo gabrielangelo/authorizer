@@ -20,7 +20,10 @@ defmodule Cli.Scripts.Authorizer do
       |> execute()
       |> AccountRender.render()
 
-    Enum.each(data, &IO.puts/1)
+    if Mix.env() != :test do
+      Enum.each(data, &IO.puts/1)
+    end
+
     data
   end
 
