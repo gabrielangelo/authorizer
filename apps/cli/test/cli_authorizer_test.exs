@@ -4,6 +4,7 @@ defmodule Cli.Test.CliAuthorizerTest do
   """
 
   use ExUnit.Case, async: true
+  alias Cli.Scripts.Authorizer
 
   import Mox
   setup :verify_on_exit!
@@ -24,7 +25,7 @@ defmodule Cli.Test.CliAuthorizerTest do
              "{\"account\":{\"active-card\":true,\"available-limit\":80,\"violations\":[\"insufficient-limit\"]}}",
              "{\"account\":{\"active-card\":true,\"available-limit\":50,\"violations\":[]}}"
            ] ==
-             Cli.Scripts.Authorizer.main([])
+             Authorizer.main([])
   end
 
   test "test account with success" do
@@ -36,7 +37,7 @@ defmodule Cli.Test.CliAuthorizerTest do
 
     assert [
              "{\"account\":{\"active-card\":false,\"available-limit\":750,\"violations\":[]}}"
-           ] == Cli.Scripts.Authorizer.main([])
+           ] == Authorizer.main([])
   end
 
   test "test account-not-initialized" do
@@ -48,7 +49,7 @@ defmodule Cli.Test.CliAuthorizerTest do
       ]
     end)
 
-    Cli.Scripts.Authorizer.main([])
+    Authorizer.main([])
   end
 
   test "test card not active" do
@@ -67,7 +68,7 @@ defmodule Cli.Test.CliAuthorizerTest do
              "{\"account\":{\"active-card\":false,\"available-limit\":100,\"violations\":[\"card-not-active\"]}}",
              "{\"account\":{\"active-card\":false,\"available-limit\":100,\"violations\":[\"card-not-active\"]}}"
            ] ==
-             Cli.Scripts.Authorizer.main([])
+             Authorizer.main([])
   end
 
   test "test insufficient-limit" do
@@ -86,7 +87,7 @@ defmodule Cli.Test.CliAuthorizerTest do
              "{\"account\":{\"active-card\":true,\"available-limit\":1000,\"violations\":[\"insufficient-limit\"]}}",
              "{\"account\":{\"active-card\":true,\"available-limit\":200,\"violations\":[]}}"
            ] ==
-             Cli.Scripts.Authorizer.main([])
+             Authorizer.main([])
   end
 
   test "test high-frequency-small-interval" do
@@ -113,7 +114,7 @@ defmodule Cli.Test.CliAuthorizerTest do
              "{\"account\":{\"active-card\":true,\"available-limit\":40,\"violations\":[\"high_frequency_small_interval\"]}}",
              "{\"account\":{\"active-card\":true,\"available-limit\":30,\"violations\":[]}}"
            ] ==
-             Cli.Scripts.Authorizer.main([])
+             Authorizer.main([])
   end
 
   test "test doubled-transaction" do
@@ -137,13 +138,13 @@ defmodule Cli.Test.CliAuthorizerTest do
              "{\"account\":{\"active-card\":true,\"available-limit\":70,\"violations\":[\"doubled-transaction\"]}}",
              "{\"account\":{\"active-card\":true,\"available-limit\":55,\"violations\":[]}}"
            ] ==
-             Cli.Scripts.Authorizer.main([])
+             Authorizer.main([])
   end
 
   test "test multiple logics" do
     now = DateTime.utc_now()
-    time = now |> DateTime.add(:timer.minutes(2) * -1, :millisecond) |> DateTime.to_iso8601()
-    time_after = now |> DateTime.add(:timer.hours(1), :millisecond) |> DateTime.to_iso8601()
+    time = DateTime.add(now, :timer.minutes(2) * -1, :millisecond) |> DateTime.to_iso8601()
+    time_after = DateTime.add(now, :timer.hours(1), :millisecond) |> DateTime.to_iso8601()
 
     expect(StdinMock, :read_data, fn ->
       [
@@ -154,7 +155,9 @@ defmodule Cli.Test.CliAuthorizerTest do
         "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 5, \"time\": \"#{time}\"}}\n",
         "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 150, \"time\": \"#{time}\"}}\n",
         "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 190, \"time\": \"#{time}\"}}\n",
-        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 15, \"time\": \"#{time_after}\"}}\n"
+        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 15, \"time\": \"#{
+          time_after
+        }\"}}\n"
       ]
     end)
 
@@ -168,6 +171,6 @@ defmodule Cli.Test.CliAuthorizerTest do
              "{\"account\":{\"active-card\":true,\"available-limit\":65,\"violations\":[\"high_frequency_small_interval\",\"insufficient-limit\"]}}",
              "{\"account\":{\"active-card\":true,\"available-limit\":50,\"violations\":[]}}"
            ] ==
-             Cli.Scripts.Authorizer.main([])
+             Authorizer.main([])
   end
 end

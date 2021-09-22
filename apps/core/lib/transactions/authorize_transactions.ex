@@ -98,6 +98,7 @@ defmodule Core.Transactions.AuthorizeTransactions do
             {%Account{violations: violations} = k_movement, transaction} =
               apply_double_transaction(transaction, new_account_movement, history, now)
 
+            # credo:disable-for-lines:6
             k_movement =
               if violations != [] do
                 %{account | violations: violations}
