@@ -16,3 +16,4 @@ RUN mix local.hex --force
 
 # Compile the project
 RUN mix deps.get
+RUN cd apps/cli/ && mix escript.build && cd - && mv apps/cli/cli . && mv cli authorizer && cp authorizer /bin
