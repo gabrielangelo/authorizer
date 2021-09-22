@@ -14,7 +14,14 @@ defmodule Cli.MixProject do
       deps: deps(),
       escript: [
         main_module: Cli.Scripts.Authorizer
-      ]
+      ],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test
+      ],
+      test_coverage: [tool: ExCoveralls]
     ]
   end
 
@@ -42,7 +49,8 @@ defmodule Cli.MixProject do
       {:credo, "~> 1.5.5", only: [:dev, :test], runtime: false},
       {:ecto_sql, "~> 3.0"},
       {:jason, "~> 1.2"},
-      {:mox, "~> 1.0", only: :test}
+      {:mox, "~> 1.0", only: :test},
+      {:excoveralls, "~> 0.10", only: :test},
     ]
   end
 end
