@@ -11,10 +11,7 @@ defmodule Core.MixProject do
       lockfile: "../../mix.lock",
       elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
-      deps: deps(),
-      escript: [
-        main_module: Cli.Scripts.Authorizer
-      ]
+      deps: deps()
     ]
   end
 

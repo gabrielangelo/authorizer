@@ -11,7 +11,10 @@ defmodule Cli.MixProject do
       lockfile: "../../mix.lock",
       elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      escript: [
+        main_module: Cli.Scripts.Authorizer
+      ]
     ]
   end
 
@@ -19,7 +22,12 @@ defmodule Cli.MixProject do
   def application do
     [
       extra_applications: [:logger],
-      mod: {Cli.Application, []}
+      mod: {Cli.Application, []},
+      escript: [
+        main_module: Cli.Scripts.Authorizer,
+        comment: "A sample escript",
+        name: :cli_authorizer
+      ]
     ]
   end
 
@@ -29,6 +37,12 @@ defmodule Cli.MixProject do
       # {:dep_from_hexpm, "~> 0.3.0"},
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"},
       # {:sibling_app_in_umbrella, in_umbrella: true}
+      {:core, in_umbrella: true},
+      {:dialyxir, "~> 1.0.0", runtime: false, allow_pre: false, only: [:dev, :test]},
+      {:credo, "~> 1.5.5", only: [:dev, :test], runtime: false},
+      {:ecto_sql, "~> 3.0"},
+      {:jason, "~> 1.2"},
+      {:mox, "~> 1.0", only: :test}
     ]
   end
 end

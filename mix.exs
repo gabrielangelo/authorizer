@@ -23,11 +23,6 @@ defmodule Authorizer.MixProject do
     [
       # {:dep_from_hexpm, "~> 0.3.0"},
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
-      {:dialyxir, "~> 1.0.0", runtime: false, allow_pre: false, only: [:dev, :test]},
-      {:credo, "~> 1.5.5", only: [:dev, :test], runtime: false},
-      {:ecto_sql, "~> 3.0"},
-      {:jason, "~> 1.2"},
-      {:mox, "~> 1.0", only: :test}
     ]
   end
 end

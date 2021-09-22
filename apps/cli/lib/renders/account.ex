@@ -6,13 +6,12 @@ defmodule Cli.Renders.Account do
   alias Core.Accounts.Model.Account
 
   def render(accounts) when is_list(accounts) and accounts != [] do
-    pre_rendered_accounts = Enum.map(accounts, &render/1)
+    accounts = accounts
+    |> Enum.map(&render/1)
 
-    if Mix.env() == :test do
-      pre_rendered_accounts
-    else
-      Enum.each(pre_rendered_accounts, &IO.puts/1)
-    end
+    Enum.each(accounts, &IO.puts/1)
+
+    accounts
   end
 
   def render([]), do: []

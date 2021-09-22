@@ -26,6 +26,6 @@ defmodule Cli.Test.CliAuthorizerTest do
                "{\"account\":{\"active-card\":true,\"available-limit\":70,\"violations\":[\"insufficient-limit\"]}}",
                "{\"account\":{\"active-card\":true,\"available-limit\":50,\"violations\":[]}}"
              ]
-           ] == Cli.Scripts.Authorizer.run()
+           ] == Cli.Scripts.Authorizer.main([])
   end
 end

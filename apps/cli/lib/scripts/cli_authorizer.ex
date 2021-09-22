@@ -11,7 +11,7 @@ defmodule Cli.Scripts.Authorizer do
 
   require Logger
 
-  def run() do
+  def main(_) do
     Logger.info("getting file info and processing")
 
     Stdin.read_data()
@@ -56,8 +56,4 @@ defmodule Cli.Scripts.Authorizer do
    fn -> [account | accounts]
     |> CreateAccount.execute() end
   end
-end
-
-if Mix.env() not in [:test]  do
-  Cli.Scripts.Authorizer.run()
 end
