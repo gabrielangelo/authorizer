@@ -1,8 +1,9 @@
-defmodule Cli.Authorizer do
+defmodule Cli.Scripts.Authorizer do
   @moduledoc """
     Authorizer cli module
   """
 
+  alias Cli.Ports.Stdin
   alias Cli.Readers.AuhtorizerReader
   alias Cli.Renders.Account, as: AccountRender
   alias Core.Accounts.CreateAccount
@@ -10,20 +11,13 @@ defmodule Cli.Authorizer do
 
   require Logger
 
-  @spec run :: :ok
-  def run do
+  def run() do
     Logger.info("getting file info and processing")
-    IO.read(:stdio, :line)
-    |> read_stdin_line([])
+
+    Stdin.read_data()
+    |> Enum.map(& Jason.decode!(&1))
     |> execute()
     |> AccountRender.render()
-  end
-
-  defp read_stdin_line(:eof, lines), do: Enum.reverse(lines)
-
-  defp read_stdin_line(data, lines) when is_binary(data) do
-    line = Jason.decode!(data)
-    read_stdin_line(IO.read(:stdio, :line), [line | lines])
   end
 
   defp execute(data) do
@@ -64,6 +58,6 @@ defmodule Cli.Authorizer do
   end
 end
 
-if Mix.env() != :test  do
-  Cli.Authorizer.run()
+if Mix.env() not in [:test]  do
+  Cli.Scripts.Authorizer.run()
 end

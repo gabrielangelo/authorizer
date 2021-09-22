@@ -2,7 +2,7 @@ defmodule Cli.Test.AuthorizeReaderTest do
   @moduledoc """
   Authorizer reader tests
   """
-  use ExUnit.Case
+   use ExUnit.Case, async: true
 
   alias Cli.Readers.AuhtorizerReader
 

@@ -1,5 +1,5 @@
 defmodule Core.Test.AuthorizerTest do
-  use ExUnit.Case
+   use ExUnit.Case, async: true
 
   alias Core.Accounts.Model.Account
   alias Core.Transactions.AuthorizeTransactions
@@ -187,7 +187,7 @@ defmodule Core.Test.AuthorizerTest do
       %{"merchant" => "Uber", "amount" => 80, "time" => time}
     ]
 
-    [
+    assert [
       %Account{
         active_card: true,
         available_limit: 1000,

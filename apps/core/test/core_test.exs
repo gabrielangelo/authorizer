@@ -1,5 +1,5 @@
 defmodule CoreTest do
-  use ExUnit.Case
+   use ExUnit.Case, async: true
   doctest Core
 
   test "greets the world" do
