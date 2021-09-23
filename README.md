@@ -28,30 +28,31 @@ Presumindo que já tenha o Docker e Docker Compose instalado, execute o comando 
 
 Testes podem ser executados:
 
-local:
+Local:
 
 ```$ mix test```
 
-usando docker:
+Docker:
 ```
 $ docker-compose run app mix test
 ```
 
 Pode-se ver a cobertura dos testes utilizando o seguinte commando:
-local:
+
+Local:
 
 ```$ mix coveralls```
 
-usando docker:
+Docker:
 
 ```$ docker-compose run app mix coveralls```
 
 ## Gerando o authorizer bin
 Local:
-- instruções irão gerar um arquivo chamado `"authorizer"`
+- instruções irão gerar um arquivo chamado `"authorizer"`;
 
 ```
-  $ chmod +x gen_authorizer_cli
+  $ chmod +x gen_authorizer_cli.sh
   $ ./gen_authorizer_cli
 ```
 
@@ -65,6 +66,9 @@ Local:
 
 Docker:
 ``` $ docker-compose run app authorizer < {file}.json```
+
+**Obs:**
+Pode-se usar o arquivo `"operations_sample.json"` para um primeiro caso de teste.
 
 ## TODOs
 
