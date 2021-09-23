@@ -16,7 +16,7 @@ defmodule Core.Transactions.Policies.TimeWindow do
     account movement will be increased here.
     transactions with status processed=true are operations settled
   """
-  @spec apply(map(), DateTime.t()) :: map()
+  @spec apply(Core.Types.AuthorizeTransactionsHistory.t(), DateTime.t()) :: AuthorizeTransactionsInput.t()
   def apply(data, now \\ DateTime.utc_now()) do
     time_ago = now |> DateTime.add(-@window_time_in_seconds, :second)
     transactions = data.transactions

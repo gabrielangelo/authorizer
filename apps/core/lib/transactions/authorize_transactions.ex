@@ -41,10 +41,13 @@ defmodule Core.Transactions.AuthorizeTransactions do
      |> Enum.map(&elem(&1, 1))}
   end
 
-  # Mounts the data structure, this means like a 'history' od transactions
-  # The data map will be incremented between the transacion's processing pipelines.
   defp process_transactions(account, transactions, now) do
-    data = %{account_movements_log: [account], transactions: transactions, transactions_log: []}
+    # Mounts the data structure, this means like a 'history' of transactions
+    data = %Core.Types.AuthorizeTransactionsHistory{
+      account_movements_log: [account],
+      transactions: transactions,
+      transactions_log: []
+    }
 
     result =
       data
