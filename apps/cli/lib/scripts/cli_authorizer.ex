@@ -35,7 +35,7 @@ defmodule Cli.Scripts.Authorizer do
 
   defp execute(data) do
     data
-    |> AuhtorizerReader.re()
+    |> AuhtorizerReader.read()
     |> Enum.map(&process_results/1)
     |> Task.async_stream(& &1.(),
       max_concurrency: 40,

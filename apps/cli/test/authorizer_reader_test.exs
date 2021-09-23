@@ -42,7 +42,7 @@ defmodule Cli.Test.AuthorizeReaderTest do
                   "time" => "2020-12-01T11:07:00.000Z"
                 }
               ], "accounts_with_transactions"}
-           ] == AuhtorizerReader.re(data)
+           ] == AuhtorizerReader.read(data)
   end
 
   test "test 2 accounts case " do
@@ -83,6 +83,6 @@ defmodule Cli.Test.AuthorizeReaderTest do
                 }
               ], "accounts_with_transactions"}
            ] ==
-             AuhtorizerReader.re(data)
+             AuhtorizerReader.read(data)
   end
 end

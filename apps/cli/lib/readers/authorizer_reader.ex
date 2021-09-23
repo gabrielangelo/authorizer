@@ -5,9 +5,10 @@ defmodule Cli.Readers.AuhtorizerReader do
 
   require Logger
 
-  def re([]), do: []
+  @spec read([map]) :: [tuple()]
+  def read([]), do: []
 
-  def re(data) do
+  def read(data) do
     Logger.info("Mounting authorizer data")
     [f_item | head] = data
 
