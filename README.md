@@ -21,15 +21,6 @@ Presumindo que já tenha o Docker e Docker Compose instalado, execute o comando 
 
 ```$ make build_container```
 
-## Modelo da Arch
-![Arch_ER](https://github.com/gabrielangelo/authorizer/blob/master/arch.png)
-
- 1. Cli.Scripts.Authorizer: Cria uma coleção de dados (strings) lidas do stdin através do módulo Cli.Ports.Stdin
- 2. Cli.Scripts.Authorizer realiza um decode para Map de cada entrada da coleção gerada pelo Cli.Ports.Stdin
- 3. Cli.Readers.AuhtorizerReader realiza um processamento de acordo com a estrutura da coleção. Os casos cobertos são criação de contas e autorização dee transações.
- 4. Cada caso irá chamar uma módulo apropriado (  Core.Transactions.AuthorizeTransactions para autorização de transação ou Core.Accounts.CreateAccount para criação de conta)
- 5. Cada execute será um processo que será executado em paralelo, após a execução completa, os outputs serão renderizados por Cli.Renders.Account
-
 ## Testes
 
 Testes podem ser executados:
@@ -58,8 +49,7 @@ Local:
 - As abaixo instruções irão gerar um arquivo chamado `"authorizer"`;
 
 ```
-  $ chmod +x gen_authorizer_cli.sh
-  $ ./gen_authorizer_cli
+  $ chmod +x gen_cli_binary.sh && ./gen_cli_binary
 ```
 
 Docker: 
@@ -75,3 +65,12 @@ Docker:
 
 **Obs:**
 Pode-se usar o arquivo `"operations_sample.json"` para um primeiro caso de teste.
+
+## Modelo da Arch
+![Arch_ER](https://github.com/gabrielangelo/authorizer/blob/master/arch.png)
+
+ 1. Cli.Scripts.Authorizer: Cria uma coleção de dados (strings) lidas do stdin através do módulo Cli.Ports.Stdin
+ 2. Cli.Scripts.Authorizer realiza um decode para Map de cada entrada da coleção gerada pelo Cli.Ports.Stdin
+ 3. Cli.Readers.AuhtorizerReader realiza um processamento de acordo com a estrutura da coleção. Os casos cobertos são criação de contas e autorização dee transações.
+ 4. Cada caso irá chamar uma módulo apropriado (  Core.Transactions.AuthorizeTransactions para autorização de transação ou Core.Accounts.CreateAccount para criação de conta)
+ 5. Cada execute será um processo que será executado em paralelo, após a execução completa, os outputs serão renderizados por Cli.Renders.Account
