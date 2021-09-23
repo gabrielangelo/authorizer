@@ -167,7 +167,7 @@ defmodule Cli.Test.CliAuthorizerTest do
              "{\"account\":{\"active-card\":true,\"available-limit\":90,\"violations\":[]}}",
              "{\"account\":{\"active-card\":true,\"available-limit\":70,\"violations\":[]}}",
              "{\"account\":{\"active-card\":true,\"available-limit\":65,\"violations\":[]}}",
-             "{\"account\":{\"active-card\":true,\"available-limit\":65,\"violations\":[\"high_frequency_small_interval\",\"doubled-transaction\"]}}",
+             "{\"account\":{\"active-card\":true,\"available-limit\":65,\"violations\":[\"doubled-transaction\",\"high_frequency_small_interval\"]}}",
              "{\"account\":{\"active-card\":true,\"available-limit\":65,\"violations\":[\"high_frequency_small_interval\",\"insufficient-limit\"]}}",
              "{\"account\":{\"active-card\":true,\"available-limit\":65,\"violations\":[\"high_frequency_small_interval\",\"insufficient-limit\"]}}",
              "{\"account\":{\"active-card\":true,\"available-limit\":50,\"violations\":[]}}"

@@ -151,7 +151,7 @@ defmodule Core.Test.AuthorizerTest do
              %Account{
                active_card: true,
                available_limit: 65,
-               violations: ["high_frequency_small_interval", "doubled-transaction"],
+               violations: ["doubled-transaction", "high_frequency_small_interval"],
                virtual_id: nil
              },
              %Account{

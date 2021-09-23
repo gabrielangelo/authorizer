@@ -1,6 +1,6 @@
 defmodule Core.Transactions.AuthorizeTransactions do
   @moduledoc """
-    Authorize module
+    Module that authorize transactions
   """
 
   alias Core.Accounts.Model.Account
@@ -40,12 +40,9 @@ defmodule Core.Transactions.AuthorizeTransactions do
      |> Enum.map(&elem(&1, 1))}
   end
 
+  # Mounts the data structure, this means like a 'history' od transactions
+  # The data map will be incremented between the transacion's processing pipelines.
   defp process_transactions(account, transactions, now) do
-    # this data will be processed and incremented between the transacion processment pipelines
-    # transactions_log is the list of operations rejected or processed
-    # account_movements_log is the list of each operation applied to an account,
-    # each account movement will be increased here
-    # transactions with status processed=true are operations settled
     data = %{account_movements_log: [account], transactions: transactions, transactions_log: []}
 
     result =
@@ -57,6 +54,11 @@ defmodule Core.Transactions.AuthorizeTransactions do
   end
 
   # Process the transactions that are inside the window interval
+  # the transactions_log is the list of operations rejected or processed.
+  # account_movements_log is the list of each operation applied to an account, so each
+  #  account movement will be increased here.
+  # transactions with status processed=true are operations settled
+
   defp process_transactions_with_time_window(data, now) do
     time_ago = now |> DateTime.add(-@window_time_in_seconds, :second)
     transactions = data.transactions
@@ -71,47 +73,24 @@ defmodule Core.Transactions.AuthorizeTransactions do
         # acummulated transactions
         processed_transactions = history.transactions_log
 
-        # accounts movements count
-        processed_transactions_count = history.processed_transactions_count
-
         case {
           is_inside_time_window?(time_ago, now, transaction.time),
           check_limit(account, transaction)
         } do
-          {true, {%Account{violations: violations}, _}}
-          when processed_transactions_count == @max_transactions_processed_in_window and index > 2 ->
-            # process the n + 1 transactions, where n = @max_transactions_processed_in_window and is inside window
-            new_movement_account = %{account | violations: []}
-
-            {applied_account_movement, transaction} =
-              apply_double_transaction(transaction, new_movement_account, history, now)
-
-            # increases the history
-            Map.merge(
-              history,
-              %{
-                account_movements_log: [
-                  Map.merge(
-                    applied_account_movement,
-                    %{
-                      violations:
-                        ["high_frequency_small_interval" | applied_account_movement.violations] ++
-                          violations
-                    }
-                  )
-                  | accounts_movements
-                ],
-                transactions_log: [
-                  %{transaction | rejected: true}
-                  | processed_transactions
-                ]
-              }
-            )
-
           {true, {%Account{violations: _} = new_account_movement, transaction_processed}} ->
             # process the first three operations inside the window
+
             {%Account{violations: violations} = applied_account_movement, transaction} =
-              apply_double_transaction(transaction_processed, new_account_movement, history, now)
+              %{
+                transaction: transaction_processed,
+                account: new_account_movement,
+                now: now,
+                processed_transactions_count: history.processed_transactions_count,
+                index: index,
+                transactions_log: history.transactions_log,
+                result: nil
+              }
+              |> apply_time_window_policies()
 
             # credo:disable-for-lines:6
             applied_account_movement =
@@ -151,25 +130,62 @@ defmodule Core.Transactions.AuthorizeTransactions do
     end)
   end
 
-  defp apply_double_transaction(transaction, account, data, now) do
-    # index processed transactions by #{transaction.merchant}/#{transaction.amount}"
-    transaction_info_log_in_last_time = get_merchant_and_amount(data.transactions_log, now)
+  defp apply_time_window_policies(data) do
+    data
+    |> apply_high_frequency_small_interval_transaction()
+    |> apply_double_transaction()
+    |> Map.get(:result)
+  end
 
-    # checks if exists a transaction with the same merchant and amount
-    case Map.get(
-           transaction_info_log_in_last_time,
-           "#{transaction.merchant}/#{transaction.amount}",
-           []
-         ) do
-      [_ | _] ->
+  defp apply_high_frequency_small_interval_transaction(
+         %{
+           transaction: transaction,
+           account: account,
+           processed_transactions_count: processed_transactions_count,
+           index: index
+         } = data
+       ) do
+    result =
+      if processed_transactions_count == 3 and index > 2 do
         {
-          %{account | violations: ["doubled-transaction" | account.violations]},
+          %{account | violations: ["high_frequency_small_interval" | account.violations]},
           %{transaction | rejected: true}
         }
-
-      [] ->
+      else
         {account, transaction}
-    end
+      end
+
+    Map.put(data, :result, result)
+  end
+
+  defp apply_double_transaction(
+         %{
+           transactions_log: transactions_log,
+           now: now,
+           result: result
+         } = data
+       ) do
+    # index processed transactions by #{transaction.merchant}/#{transaction.amount}"
+    transaction_info_log_in_last_time = get_merchant_and_amount(transactions_log, now)
+    {account, transaction} = result
+
+    result =
+      case Map.get(
+             transaction_info_log_in_last_time,
+             "#{transaction.merchant}/#{transaction.amount}",
+             []
+           ) do
+        [_ | _] ->
+          {
+            %{account | violations: ["doubled-transaction" | account.violations]},
+            %{transaction | rejected: true}
+          }
+
+        [] ->
+          {account, transaction}
+      end
+
+    Map.put(data, :result, result)
   end
 
   defp check_limit(%Account{active_card: false} = account, %Transaction{} = transaction),
@@ -258,7 +274,8 @@ defmodule Core.Transactions.AuthorizeTransactions do
             }
           )
 
-          _ -> history
+        _ ->
+          history
       end
     end)
   end
