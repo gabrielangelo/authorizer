@@ -132,12 +132,12 @@ defmodule Core.Transactions.AuthorizeTransactions do
 
   defp apply_time_window_policies(data) do
     data
-    |> apply_high_frequency_small_interval_transaction()
-    |> apply_double_transaction()
+    |> apply_high_frequency_small_interval_transaction_policy()
+    |> apply_double_transaction_policy()
     |> Map.get(:result)
   end
 
-  defp apply_high_frequency_small_interval_transaction(
+  defp apply_high_frequency_small_interval_transaction_policy(
          %{
            transaction: transaction,
            account: account,
@@ -146,7 +146,7 @@ defmodule Core.Transactions.AuthorizeTransactions do
          } = data
        ) do
     result =
-      if processed_transactions_count == 3 and index > 2 do
+      if processed_transactions_count == @max_transactions_processed_in_window and index > 2 do
         {
           %{account | violations: ["high_frequency_small_interval" | account.violations]},
           %{transaction | rejected: true}
@@ -158,14 +158,14 @@ defmodule Core.Transactions.AuthorizeTransactions do
     Map.put(data, :result, result)
   end
 
-  defp apply_double_transaction(
+  defp apply_double_transaction_policy(
          %{
            transactions_log: transactions_log,
            now: now,
            result: result
          } = data
        ) do
-    # index processed transactions by #{transaction.merchant}/#{transaction.amount}"
+    # transactions indexed by #{transaction.merchant}/#{transaction.amount}"
     transaction_info_log_in_last_time = get_merchant_and_amount(transactions_log, now)
     {account, transaction} = result
 
