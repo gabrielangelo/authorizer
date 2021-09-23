@@ -46,17 +46,18 @@ defmodule Core.Transactions.AuthorizeTransactions do
     # account_movements_log is the list of each operation applied to an account,
     # each account movement will be increased here
     # transactions with status processed=true are operations settled
-    data =  %{account_movements_log: [account], transactions: transactions, transactions_log: []}
+    data = %{account_movements_log: [account], transactions: transactions, transactions_log: []}
+
     result =
       data
-      |> process_settlements_with_time_window(now)
-      |> process_settlements()
+      |> process_transactions_with_time_window(now)
+      |> process_transactions_outside_the_time_window()
 
     {:ok, result}
   end
 
   # Process the transactions that are inside the window interval
-  defp process_settlements_with_time_window(data, now) do
+  defp process_transactions_with_time_window(data, now) do
     time_ago = now |> DateTime.add(-@window_time_in_seconds, :second)
     transactions = data.transactions
     data = Map.put(data, :processed_transactions_count, 0)
@@ -77,11 +78,11 @@ defmodule Core.Transactions.AuthorizeTransactions do
           is_inside_time_window?(time_ago, now, transaction.time),
           check_limit(account, transaction)
         } do
-
           {true, {%Account{violations: violations}, _}}
           when processed_transactions_count == @max_transactions_processed_in_window and index > 2 ->
             # process the n + 1 transactions, where n = @max_transactions_processed_in_window and is inside window
             new_movement_account = %{account | violations: []}
+
             {applied_account_movement, transaction} =
               apply_double_transaction(transaction, new_movement_account, history, now)
 
@@ -94,7 +95,8 @@ defmodule Core.Transactions.AuthorizeTransactions do
                     applied_account_movement,
                     %{
                       violations:
-                        ["high_frequency_small_interval" | applied_account_movement.violations] ++ violations
+                        ["high_frequency_small_interval" | applied_account_movement.violations] ++
+                          violations
                     }
                   )
                   | accounts_movements
@@ -106,10 +108,10 @@ defmodule Core.Transactions.AuthorizeTransactions do
               }
             )
 
-          {true, {%Account{violations: _} = new_account_movement, transaction}} ->
+          {true, {%Account{violations: _} = new_account_movement, transaction_processed}} ->
             # process the first three operations inside the window
             {%Account{violations: violations} = applied_account_movement, transaction} =
-              apply_double_transaction(transaction, new_account_movement, history, now)
+              apply_double_transaction(transaction_processed, new_account_movement, history, now)
 
             # credo:disable-for-lines:6
             applied_account_movement =
@@ -118,6 +120,7 @@ defmodule Core.Transactions.AuthorizeTransactions do
               else
                 applied_account_movement
               end
+
             # increases the history
             if transaction.rejected do
               Map.merge(history, %{
@@ -231,7 +234,7 @@ defmodule Core.Transactions.AuthorizeTransactions do
     |> Enum.group_by(&"#{&1.merchant}/#{&1.amount}")
   end
 
-  defp process_settlements(data) do
+  defp process_transactions_outside_the_time_window(data) do
     account_movement_log = data.account_movements_log
 
     data.transactions_log
@@ -241,9 +244,6 @@ defmodule Core.Transactions.AuthorizeTransactions do
       processed_transactions = history.transactions_log
 
       case {transaction.is_processed, transaction.rejected, check_limit(account, transaction)} do
-        {true, false, _} ->
-          history
-
         # if transaction has not been processed, so, will be
         {false, false, {%Account{} = new_account_movement, _}} ->
           is_processed = if(new_account_movement.violations == [], do: true, else: false)
@@ -258,8 +258,7 @@ defmodule Core.Transactions.AuthorizeTransactions do
             }
           )
 
-        {false, true, {%Account{}, _}} ->
-          history
+          _ -> history
       end
     end)
   end
