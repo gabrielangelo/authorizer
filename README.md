@@ -45,9 +45,7 @@ Docker:
 ## Gerando o authorizer bin
 Local:
 - As abaixo instruções irão gerar um arquivo chamado `"authorizer"`;
-
-- ```$ chmod +x gen_cli_binary.sh && ./gen_cli_binary```
-ou 
+- 
 - ```$ make authorizer_cli```
 
 Docker: 
