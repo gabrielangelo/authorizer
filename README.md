@@ -1,21 +1,71 @@
 # Authorizer
+ Uma CLI escrita em Elixir  que autoriza transações para uma conta específica seguindo uma
+série de regras predefinidas.
 
-**TODO: Add description**
+## Features
+  
+1. Criação de conta
+2. Autorização de transação
+3. Leitura de linhas do Stdin
+4. Renderização de accounts
 
-## Installation
+## Setup
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `authorizer` to your list of dependencies in `mix.exs`:
+Fazendo setup local.
 
-```elixir
-def deps do
-  [
-    {:authorizer, "~> 0.1.0"}
-  ]
-end
+```$ make setup```
+
+#### Docker Compose
+
+Presumindo que já tenha o Docker e Docker Compose instalado, execute o comando abaixo.  
+
+```$ make build_container```
+
+
+## Decisões/Modelo
+
+## Testes
+
+Testes podem ser executados:
+
+local:
+
+```$ mix test```
+
+usando docker:
+```
+$ docker-compose run app mix test
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/authorizer](https://hexdocs.pm/authorizer).
+Pode-se ver a cobertura dos testes utilizando o seguinte commando:
+local:
 
+```$ mix coveralls```
+
+usando docker:
+
+```$ docker-compose run app mix coveralls```
+
+## Gerando o authorizer bin
+Local:
+- instruções irão gerar um arquivo chamado `"authorizer"`
+
+```
+  $ chmod +x gen_authorizer_cli
+  $ ./gen_authorizer_cli
+```
+
+Docker: 
+ 
+ O`"authorizer"` já vem gerado automaticamente dentro do container após o build.
+
+## Execução
+Local: 
+``` $ authorizer < {file}.json```
+
+Docker:
+``` $ docker-compose run app authorizer < {file}.json```
+
+## TODOs
+
+Veja as Issues do repositório.
