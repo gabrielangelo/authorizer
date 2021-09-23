@@ -71,7 +71,7 @@ defmodule Core.Transactions.AuthorizeTransactions do
           when processed_transactions_count == @max_transactions_processed_in_window and index > 2 ->
             new_movement_account = %{account | violations: []}
 
-            {k_movement, transaction} =
+            {applied_account_movement, transaction} =
               apply_double_transaction(transaction, new_movement_account, history, now)
 
             Map.merge(
@@ -79,10 +79,10 @@ defmodule Core.Transactions.AuthorizeTransactions do
               %{
                 account_movements_log: [
                   Map.merge(
-                    k_movement,
+                    applied_account_movement,
                     %{
                       violations:
-                        ["high_frequency_small_interval" | k_movement.violations] ++ violations
+                        ["high_frequency_small_interval" | applied_account_movement.violations] ++ violations
                     }
                   )
                   | accounts_movements
@@ -95,20 +95,20 @@ defmodule Core.Transactions.AuthorizeTransactions do
             )
 
           {true, {%Account{violations: _} = new_account_movement, transaction}} ->
-            {%Account{violations: violations} = k_movement, transaction} =
+            {%Account{violations: violations} = applied_account_movement, transaction} =
               apply_double_transaction(transaction, new_account_movement, history, now)
 
             # credo:disable-for-lines:6
-            k_movement =
+            applied_account_movement =
               if violations != [] do
                 %{account | violations: violations}
               else
-                k_movement
+                applied_account_movement
               end
 
             if transaction.rejected do
               Map.merge(history, %{
-                account_movements_log: [k_movement | accounts_movements],
+                account_movements_log: [applied_account_movement | accounts_movements],
                 transactions_log: [transaction | processed_transactions]
               })
             else
