@@ -9,10 +9,10 @@ coveralls:
 
 setup:
 	@mix deps.get
+	@mix credo --strict
 	@mix test
 
 build_container:
-	@chmod +x gen_cli_binary.sh
 	@docker-compose build --no-cache
 	@docker-compose up
 
@@ -23,9 +23,3 @@ init:
 authorizer_cli: 
 	@cd apps/cli/ && mix escript.build && cd - && mv apps/cli/cli .
 	@mv cli authorizer
-
-setup:
-	@mix deps.get
-	@mix ecto.setup
-	@mix ecto.migrate
-	@mix test
