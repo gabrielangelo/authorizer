@@ -1,6 +1,6 @@
 defmodule Core.Transactions.AuthorizeTransactions do
   @moduledoc """
-  Transactions module
+    Authorize module
   """
 
   alias Core.Accounts.Model.Account
@@ -41,14 +41,21 @@ defmodule Core.Transactions.AuthorizeTransactions do
   end
 
   defp process_transactions(account, transactions, now) do
+    # this data will be processed and incremented between the transacion processment pipelines
+    # transactions_log is the list of operations rejected or processed
+    # account_movements_log is the list of each operation applied to an account,
+    # each account movement will be increased here
+    # transactions with status processed=true are operations settled
+    data =  %{account_movements_log: [account], transactions: transactions, transactions_log: []}
     result =
-      %{account_movements_log: [account], transactions: transactions, transactions_log: []}
+      data
       |> process_settlements_with_time_window(now)
       |> process_settlements()
 
     {:ok, result}
   end
 
+  # Process the transactions that are inside the window interval
   defp process_settlements_with_time_window(data, now) do
     time_ago = now |> DateTime.add(-@window_time_in_seconds, :second)
     transactions = data.transactions
@@ -60,20 +67,25 @@ defmodule Core.Transactions.AuthorizeTransactions do
       {transaction, index}, history ->
         [account | _] = accounts_movements = history.account_movements_log
 
+        # acummulated transactions
         processed_transactions = history.transactions_log
+
+        # accounts movements count
         processed_transactions_count = history.processed_transactions_count
 
         case {
-          is_inside_delay?(time_ago, now, transaction.time),
+          is_inside_time_window?(time_ago, now, transaction.time),
           check_limit(account, transaction)
         } do
+
           {true, {%Account{violations: violations}, _}}
           when processed_transactions_count == @max_transactions_processed_in_window and index > 2 ->
+            # process the n + 1 transactions, where n = @max_transactions_processed_in_window and is inside window
             new_movement_account = %{account | violations: []}
-
             {applied_account_movement, transaction} =
               apply_double_transaction(transaction, new_movement_account, history, now)
 
+            # increases the history
             Map.merge(
               history,
               %{
@@ -95,6 +107,7 @@ defmodule Core.Transactions.AuthorizeTransactions do
             )
 
           {true, {%Account{violations: _} = new_account_movement, transaction}} ->
+            # process the first three operations inside the window
             {%Account{violations: violations} = applied_account_movement, transaction} =
               apply_double_transaction(transaction, new_account_movement, history, now)
 
@@ -105,7 +118,7 @@ defmodule Core.Transactions.AuthorizeTransactions do
               else
                 applied_account_movement
               end
-
+            # increases the history
             if transaction.rejected do
               Map.merge(history, %{
                 account_movements_log: [applied_account_movement | accounts_movements],
@@ -136,8 +149,10 @@ defmodule Core.Transactions.AuthorizeTransactions do
   end
 
   defp apply_double_transaction(transaction, account, data, now) do
+    # index processed transactions by #{transaction.merchant}/#{transaction.amount}"
     transaction_info_log_in_last_time = get_merchant_and_amount(data.transactions_log, now)
 
+    # checks if exists a transaction with the same merchant and amount
     case Map.get(
            transaction_info_log_in_last_time,
            "#{transaction.merchant}/#{transaction.amount}",
@@ -184,7 +199,7 @@ defmodule Core.Transactions.AuthorizeTransactions do
        when amount <= available_limit,
        do: {%{account | available_limit: available_limit - amount, violations: []}, transaction}
 
-  defp is_inside_delay?(time_ago, now, transaction_time) do
+  defp is_inside_time_window?(time_ago, now, transaction_time) do
     time_ago = DateTime.truncate(time_ago, :millisecond)
     now = DateTime.truncate(now, :millisecond)
     transaction_time = DateTime.truncate(transaction_time, :millisecond)
@@ -207,7 +222,7 @@ defmodule Core.Transactions.AuthorizeTransactions do
 
     transactions
     |> Enum.reduce([], fn transaction, transaction_info_log ->
-      if is_inside_delay?(time_ago, now, transaction.time) do
+      if is_inside_time_window?(time_ago, now, transaction.time) do
         [transaction | transaction_info_log]
       else
         transaction_info_log
@@ -229,6 +244,7 @@ defmodule Core.Transactions.AuthorizeTransactions do
         {true, false, _} ->
           history
 
+        # if transaction has not been processed, so, will be
         {false, false, {%Account{} = new_account_movement, _}} ->
           is_processed = if(new_account_movement.violations == [], do: true, else: false)
 
