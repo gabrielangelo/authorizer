@@ -65,7 +65,7 @@ Docker:
 Pode-se usar o arquivo `"operations_sample.json"` para um primeiro caso de teste.
 
 ## Modelo geral da Arch
-[comment]: <> (A imagem pode ser visualizada localmente acessando arquivo arch.png)
+[comment]: <> (A imagem pode ser visualizada localmente acessando arquivo assets/images/arch.png)
 ![Arch_ER](https://github.com/gabrielangelo/authorizer/blob/master/assets/images/arch.png)
 
  1. Cli.Scripts.Authorizer: Cria uma coleção de dados (strings) lidas do stdin através do módulo Cli.Ports.Stdin
