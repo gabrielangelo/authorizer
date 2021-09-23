@@ -21,8 +21,8 @@ Presumindo que já tenha o Docker e Docker Compose instalado, execute o comando 
 
 ```$ make build_container```
 
-
-## Decisões/Modelo
+## Modelo da Arch
+![Arch_ER](https://github.com/gabrielangelo/authorizer/blob/master/arch.png)
 
 ## Testes
 
@@ -69,7 +69,3 @@ Docker:
 
 **Obs:**
 Pode-se usar o arquivo `"operations_sample.json"` para um primeiro caso de teste.
-
-## TODOs
-
-Veja as Issues do repositório.
