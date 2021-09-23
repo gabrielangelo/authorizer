@@ -13,13 +13,13 @@ série de regras predefinidas.
 
 Fazendo setup local.
 
-```$ make setup```
+- ```$ make setup```
 
 #### Docker Compose
 
 Presumindo que já tenha o Docker e Docker Compose instalado, execute o comando abaixo.  
 
-```$ make build_container```
+- ```$ make build_container```
 
 ## Testes
 
@@ -27,30 +27,28 @@ Testes podem ser executados:
 
 Local:
 
-```$ mix test```
+- ```$ mix test```
 
 Docker:
-```
-$ docker-compose run app mix test
-```
+- ```$ docker-compose run app mix test```
 
 Pode-se ver a cobertura dos testes utilizando o seguinte commando:
 
 Local:
 
-```$ mix coveralls```
+- ```$ mix coveralls```
 
 Docker:
 
-```$ docker-compose run app mix coveralls```
+- ```$ docker-compose run app mix coveralls```
 
 ## Gerando o authorizer bin
 Local:
 - As abaixo instruções irão gerar um arquivo chamado `"authorizer"`;
 
-```
-  $ chmod +x gen_cli_binary.sh && ./gen_cli_binary
-```
+- ```$ chmod +x gen_cli_binary.sh && ./gen_cli_binary```
+ou 
+- ```$ make authorizer_cli```
 
 Docker: 
  
@@ -58,10 +56,10 @@ Docker:
 
 ## Execução
 Local: 
-``` $ authorizer < {file}.json```
+- ``` $ authorizer < {file}.json```
 
 Docker:
-``` $ docker-compose run app authorizer < {file}.json```
+- ``` $ docker-compose run app authorizer < {file}.json```
 
 **Obs:**
 Pode-se usar o arquivo `"operations_sample.json"` para um primeiro caso de teste.
