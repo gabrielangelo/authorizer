@@ -78,8 +78,7 @@ defmodule Core.Transactions.AuthorizeTransactions do
           check_limit(account, transaction)
         } do
           {true, {%Account{violations: _} = new_account_movement, transaction_processed}} ->
-            # process the first three operations inside the window
-
+            # apply time window policy
             {%Account{violations: violations} = applied_account_movement, transaction} =
               %{
                 transaction: transaction_processed,
