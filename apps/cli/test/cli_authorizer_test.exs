@@ -9,13 +9,24 @@ defmodule Cli.Test.CliAuthorizerTest do
   import Mox
   setup :verify_on_exit!
 
-  test "test stdin successfully transactions followed by insufficient-limit" do
+  setup do
+    now = DateTime.utc_now()
+    time = DateTime.add(now, :timer.minutes(2) * -1, :millisecond) |> DateTime.to_iso8601()
+    time_after = DateTime.add(now, :timer.hours(1), :millisecond) |> DateTime.to_iso8601()
+    %{
+      now: now,
+      time: time,
+      time_after: time_after
+    }
+  end
+
+  test "test stdin successfully transactions followed by insufficient-limit",  %{time: time, time_after: time_after} do
     expect(StdinMock, :read_data, fn ->
       [
         "{\"account\": {\"active-card\": true, \"available-limit\": 100}}\n",
-        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 20, \"time\": \"2019-02-13T10:00:00.000Z\"}}\n",
-        "{\"transaction\": {\"merchant\": \"Habbib's\", \"amount\": 90, \"time\": \"2019-02-13T11:00:00.000Z\"}}\n",
-        "{\"transaction\": {\"merchant\": \"McDonald's\", \"amount\": 30, \"time\": \"2019-02-13T12:00:00.000Z\"}}"
+        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 20, \"time\": \"#{time}\"}}\n",
+        "{\"transaction\": {\"merchant\": \"Habbib's\", \"amount\": 90, \"time\": \"#{time}\"}}\n",
+        "{\"transaction\": {\"merchant\": \"McDonald's\", \"amount\": 30, \"time\": \"#{time_after}\"}}"
       ]
     end)
 
@@ -40,25 +51,25 @@ defmodule Cli.Test.CliAuthorizerTest do
            ] == Authorizer.main([])
   end
 
-  test "test account-not-initialized" do
+  test "test account-not-initialized",  %{time: time, now: now} do
     expect(StdinMock, :read_data, fn ->
       [
-        "{\"transaction\": {\"merchant\": \"Uber Eats\", \"amount\": 25, \"time\": \"2019-02-13T10:00:00.000Z\"}}\n",
+        "{\"transaction\": {\"merchant\": \"Uber Eats\", \"amount\": 25, \"time\": \"#{time}\"}}\n",
         "{\"account\": {\"active-card\": true, \"available-limit\": 100}}\n",
-        "{\"transaction\": {\"merchant\": \"Habbib's\", \"amount\": 25, \"time\": \"2019-02-13T11:00:00.000Z\"}}\n"
+        "{\"transaction\": {\"merchant\": \"Habbib's\", \"amount\": 25, \"time\": \"#{now}\"}}\n"
       ]
     end)
 
     Authorizer.main([])
   end
 
-  test "test card not active" do
+  test "test card not active", %{time: time, now: now} do
     expect(StdinMock, :read_data, fn ->
       [
         "{\"account\": {\"active-card\": false, \"available-limit\": 100}}\n",
-        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 20, \"time\": \"2019-02-13T10:00:00.000Z\"}}\n",
-        "{\"transaction\": {\"merchant\": \"Habbib's\", \"amount\": 90, \"time\": \"2019-02-13T11:00:00.000Z\"}}\n",
-        "{\"transaction\": {\"merchant\": \"McDonald's\", \"amount\": 30, \"time\": \"2019-02-13T12:00:00.000Z\"}}"
+        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 20, \"time\": \"#{time}\"}}\n",
+        "{\"transaction\": {\"merchant\": \"Habbib's\", \"amount\": 90, \"time\": \"#{time}\"}}\n",
+        "{\"transaction\": {\"merchant\": \"McDonald's\", \"amount\": 30, \"time\": \"#{now}\"}}"
       ]
     end)
 
@@ -71,13 +82,13 @@ defmodule Cli.Test.CliAuthorizerTest do
              Authorizer.main([])
   end
 
-  test "test insufficient-limit" do
+  test "test insufficient-limit", %{time: time, now: now} do
     expect(StdinMock, :read_data, fn ->
       [
         "{\"account\": {\"active-card\": true, \"available-limit\": 1000}}\n",
-        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 1250, \"time\": \"2019-02-13T10:00:00.000Z\"}}\n",
-        "{\"transaction\": {\"merchant\": \"Habbib's\", \"amount\": 2500, \"time\": \"2019-02-13T11:00:00.000Z\"}}\n",
-        "{\"transaction\": {\"merchant\": \"McDonald's\", \"amount\": 800, \"time\": \"2019-02-13T12:00:00.000Z\"}}"
+        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 1250, \"time\": \"#{time}\"}}\n",
+        "{\"transaction\": {\"merchant\": \"Habbib's\", \"amount\": 2500, \"time\": \"#{time}\"}}\n",
+        "{\"transaction\": {\"merchant\": \"McDonald's\", \"amount\": 800, \"time\": \"#{now}\"}}"
       ]
     end)
 
@@ -90,10 +101,7 @@ defmodule Cli.Test.CliAuthorizerTest do
              Authorizer.main([])
   end
 
-  test "test high-frequency-small-interval" do
-    now = DateTime.utc_now()
-    now_iso = now |> DateTime.to_iso8601()
-    time = now |> DateTime.add(:timer.minutes(2) * -1, :millisecond) |> DateTime.to_iso8601()
+  test "test high-frequency-small-interval", %{time: time, now: now} do
 
     expect(StdinMock, :read_data, fn ->
       [
@@ -102,7 +110,7 @@ defmodule Cli.Test.CliAuthorizerTest do
         "{\"transaction\": {\"merchant\": \"Habbib's\", \"amount\": 20, \"time\": \"#{time}\"}}\n",
         "{\"transaction\": {\"merchant\": \"McDonald's\", \"amount\": 20, \"time\": \"#{time}\"}}\n",
         "{\"transaction\": {\"merchant\": \"Subway\", \"amount\": 20, \"time\": \"#{time}\"}}\n",
-        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 10, \"time\": \"#{now_iso}\"}}"
+        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 10, \"time\": \"#{now}\"}}"
       ]
     end)
 
@@ -117,10 +125,7 @@ defmodule Cli.Test.CliAuthorizerTest do
              Authorizer.main([])
   end
 
-  test "test doubled-transaction" do
-    now = DateTime.utc_now()
-    time = now |> DateTime.add(:timer.minutes(2) * -1, :millisecond) |> DateTime.to_iso8601()
-
+  test "test doubled-transaction", %{time: time} do
     expect(StdinMock, :read_data, fn ->
       [
         "{\"account\": {\"active-card\": true, \"available-limit\": 100}}",
@@ -141,11 +146,7 @@ defmodule Cli.Test.CliAuthorizerTest do
              Authorizer.main([])
   end
 
-  test "test multiple logics" do
-    now = DateTime.utc_now()
-    time = DateTime.add(now, :timer.minutes(2) * -1, :millisecond) |> DateTime.to_iso8601()
-    time_after = DateTime.add(now, :timer.hours(1), :millisecond) |> DateTime.to_iso8601()
-
+  test "test multiple logics", %{time: time, time_after: time_after}do
     expect(StdinMock, :read_data, fn ->
       [
         "{\"account\": {\"active-card\": true, \"available-limit\": 100}}",
@@ -170,6 +171,34 @@ defmodule Cli.Test.CliAuthorizerTest do
              "{\"account\":{\"active-card\":true,\"available-limit\":65,\"violations\":[\"high_frequency_small_interval\",\"insufficient-limit\"]}}",
              "{\"account\":{\"active-card\":true,\"available-limit\":65,\"violations\":[\"high_frequency_small_interval\",\"insufficient-limit\"]}}",
              "{\"account\":{\"active-card\":true,\"available-limit\":50,\"violations\":[]}}"
+           ] ==
+             Authorizer.main([])
+  end
+
+  test "test account-not-initialized case", %{time: time, time_after: time_after} do
+
+    expect(StdinMock, :read_data, fn ->
+      [
+        "{\"transaction\": {\"merchant\": \"McDonald's\", \"amount\": 10, \"time\": \"#{time}\"}}\n",
+        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 20, \"time\": \"#{time}\"}}\n",
+        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 5, \"time\": \"#{time}\"}}\n",
+        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 5, \"time\": \"#{time}\"}}\n",
+        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 150, \"time\": \"#{time}\"}}\n",
+        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 190, \"time\": \"#{time}\"}}\n",
+        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 15, \"time\": \"#{
+          time_after
+        }\"}}\n"
+      ]
+    end)
+
+    assert [
+             "{\"account\":{\"active-card\":null,\"available-limit\":null,\"violations\":[\"account-not-initialized\"]}}",
+             "{\"account\":{\"active-card\":null,\"available-limit\":null,\"violations\":[\"account-not-initialized\"]}}",
+             "{\"account\":{\"active-card\":null,\"available-limit\":null,\"violations\":[\"account-not-initialized\"]}}",
+             "{\"account\":{\"active-card\":null,\"available-limit\":null,\"violations\":[\"account-not-initialized\"]}}",
+             "{\"account\":{\"active-card\":null,\"available-limit\":null,\"violations\":[\"account-not-initialized\"]}}",
+             "{\"account\":{\"active-card\":null,\"available-limit\":null,\"violations\":[\"account-not-initialized\"]}}",
+             "{\"account\":{\"active-card\":null,\"available-limit\":null,\"violations\":[\"account-not-initialized\"]}}"
            ] ==
              Authorizer.main([])
   end

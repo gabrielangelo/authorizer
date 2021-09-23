@@ -37,7 +37,7 @@ defmodule Cli.Scripts.Authorizer do
     data
     |> AuhtorizerReader.re()
     |> Enum.map(&process_results/1)
-    |> Task.async_stream(& &1. (),
+    |> Task.async_stream(& &1.(),
       max_concurrency: 40,
       timeout: 10_000
     )
@@ -74,7 +74,9 @@ defmodule Cli.Scripts.Authorizer do
   end
 
   defp process_results({account, accounts, "accounts"}) do
-   fn -> [account | accounts]
-    |> CreateAccount.execute() end
+    fn ->
+      [account | accounts]
+      |> CreateAccount.execute()
+    end
   end
 end
