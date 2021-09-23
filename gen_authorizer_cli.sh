@@ -1,0 +1,1 @@
+cd apps/cli/ && mix escript.build && cd - && mv apps/cli/cli .

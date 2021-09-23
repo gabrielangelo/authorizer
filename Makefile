@@ -23,3 +23,9 @@ init:
 authorizer_cli: 
 	@cd apps/cli/ && mix escript.build && cd - && mv apps/cli/cli .
 	@mv cli authorizer
+
+setup:
+	@mix deps.get
+	@mix ecto.setup
+	@mix ecto.migrate
+	@mix test

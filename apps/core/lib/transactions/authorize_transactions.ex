@@ -12,7 +12,7 @@ defmodule Core.Transactions.AuthorizeTransactions do
   @window_time_in_seconds 120
   @max_transactions_processed_in_window 3
 
-  @spec execute(account :: map(), transactions :: [map()]) :: [Account.t()]
+  @spec execute(account :: map(), transactions :: [map()]) :: [Account.t()] | {:error, any()}
   def execute(account, transactions) do
     now = DateTime.utc_now()
     account = account || %{}
