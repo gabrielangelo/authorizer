@@ -28,7 +28,7 @@ defmodule Cli.Test.CliAuthorizerTest do
              Authorizer.main([])
   end
 
-  test "test account with success" do
+  test "test account creation with success" do
     expect(StdinMock, :read_data, fn ->
       [
         ["{\"account\": {\"active-card\": false, \"available-limit\": 750}}\n"]

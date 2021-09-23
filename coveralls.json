@@ -1,6 +1,7 @@
 {
     "skip_files": [
         "test/",
+        "apps/cli/lib/adapters/stdin.ex",
         "deps"
     ],
     "coverage_options": {
