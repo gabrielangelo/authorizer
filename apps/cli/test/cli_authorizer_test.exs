@@ -135,7 +135,9 @@ defmodule Cli.Test.CliAuthorizerTest do
         "{\"transaction\": {\"merchant\": \"Habbib's\", \"amount\": 20, \"time\": \"#{time}\"}}\n",
         "{\"transaction\": {\"merchant\": \"McDonald's\", \"amount\": 20, \"time\": \"#{time}\"}}\n",
         "{\"transaction\": {\"merchant\": \"Subway\", \"amount\": 20, \"time\": \"#{time}\"}}\n",
-        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 10, \"time\": \"#{time_after}\"}}"
+        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 10, \"time\": \"#{
+          time_after
+        }\"}}"
       ]
     end)
 
@@ -244,6 +246,29 @@ defmodule Cli.Test.CliAuthorizerTest do
              "{\"account\":{\"active-card\":true,\"available-limit\":1000,\"violations\":[\"insufficient-limit\"]}}",
              "{\"account\":{\"active-card\":true,\"available-limit\":200,\"violations\":[]}}",
              "{\"account\":{\"active-card\":true,\"available-limit\":120,\"violations\":[]}}"
+           ] ==
+             Authorizer.main([])
+  end
+
+  test "outside time" do
+    expect(StdinMock, :read_data, fn ->
+      [
+        "{\"account\": {\"active-card\": true, \"available-limit\": 100}}\n",
+        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 20, \"time\": \"2019-02-13T11:00:00.000Z\"}}\n",
+        "{\"transaction\": {\"merchant\": \"Habbib's\", \"amount\": 20, \"time\": \"2019-02-13T11:00:01.000Z\"}}\n",
+        "{\"transaction\": {\"merchant\": \"McDonald's\", \"amount\": 20, \"time\": \"2019-02-13T11:01:01.000Z\"}}\n",
+        "{\"transaction\": {\"merchant\": \"Subway\", \"amount\": 20, \"time\": \"2019-02-13T11:01:31.000Z\"}}\n",
+        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 10, \"time\": \"2019-02-13T12:00:00.000Z\"}}"
+      ]
+    end)
+
+    assert [
+             "{\"account\":{\"active-card\":true,\"available-limit\":100,\"violations\":[]}}",
+             "{\"account\":{\"active-card\":true,\"available-limit\":80,\"violations\":[]}}",
+             "{\"account\":{\"active-card\":true,\"available-limit\":60,\"violations\":[]}}",
+             "{\"account\":{\"active-card\":true,\"available-limit\":40,\"violations\":[]}}",
+             "{\"account\":{\"active-card\":true,\"available-limit\":40,\"violations\":[\"high_frequency_small_interval\"]}}",
+             "{\"account\":{\"active-card\":true,\"available-limit\":30,\"violations\":[]}}"
            ] ==
              Authorizer.main([])
   end

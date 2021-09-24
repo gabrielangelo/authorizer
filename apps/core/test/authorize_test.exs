@@ -1,5 +1,5 @@
 defmodule Core.Test.AuthorizerTest do
-   use ExUnit.Case, async: true
+  use ExUnit.Case, async: true
 
   alias Core.Accounts.Model.Account
   alias Core.Transactions.AuthorizeTransactions
@@ -8,7 +8,7 @@ defmodule Core.Test.AuthorizerTest do
   test "test high_frequency_small_interval" do
     account = %{"active-card" => true, "available-limit" => 100}
     now = DateTime.utc_now()
-    time = now |> DateTime.add(:timer.minutes(2) * -1, :millisecond) |> DateTime.to_iso8601()
+    time = now |> DateTime.add(:timer.minutes(2) * -1, :second) |> DateTime.to_iso8601()
 
     transactions = [
       %{"merchant" => "Burger King", "amount" => 20, "time" => time},
@@ -188,38 +188,38 @@ defmodule Core.Test.AuthorizerTest do
     ]
 
     assert [
-      %Account{
-        active_card: true,
-        available_limit: 1000,
-        violations: [],
-        virtual_id: nil
-      },
-      %Account{
-        active_card: true,
-        available_limit: 1000,
-        violations: ["insufficient-limit"],
-        virtual_id: nil
-      },
-      %Account{
-        active_card: true,
-        available_limit: 1000,
-        violations: ["insufficient-limit"],
-        virtual_id: nil
-      },
-      %Account{
-        active_card: true,
-        available_limit: 200,
-        violations: [],
-        virtual_id: nil
-      },
-      %Account{
-        active_card: true,
-        available_limit: 120,
-        violations: [],
-        virtual_id: nil
-      }
-    ] ==
-      AuthorizeTransactions.execute(account, transactions)
+             %Account{
+               active_card: true,
+               available_limit: 1000,
+               violations: [],
+               virtual_id: nil
+             },
+             %Account{
+               active_card: true,
+               available_limit: 1000,
+               violations: ["insufficient-limit"],
+               virtual_id: nil
+             },
+             %Account{
+               active_card: true,
+               available_limit: 1000,
+               violations: ["insufficient-limit"],
+               virtual_id: nil
+             },
+             %Account{
+               active_card: true,
+               available_limit: 200,
+               violations: [],
+               virtual_id: nil
+             },
+             %Account{
+               active_card: true,
+               available_limit: 120,
+               violations: [],
+               virtual_id: nil
+             }
+           ] ==
+             AuthorizeTransactions.execute(account, transactions)
   end
 
   test "test account-not-initialized" do
@@ -319,20 +319,20 @@ defmodule Core.Test.AuthorizerTest do
              },
              %Core.Accounts.Model.Account{
                active_card: true,
+               available_limit: 1000,
+               violations: ["insufficient-limit"],
+               virtual_id: nil
+             },
+             %Core.Accounts.Model.Account{
+               active_card: true,
+               available_limit: 1000,
+               violations: ["insufficient-limit"],
+               virtual_id: nil
+             },
+             %Core.Accounts.Model.Account{
+               active_card: true,
                available_limit: 200,
                violations: [],
-               virtual_id: nil
-             },
-             %Core.Accounts.Model.Account{
-               active_card: true,
-               available_limit: 1000,
-               violations: ["insufficient-limit"],
-               virtual_id: nil
-             },
-             %Core.Accounts.Model.Account{
-               active_card: true,
-               available_limit: 1000,
-               violations: ["insufficient-limit"],
                virtual_id: nil
              }
            ] ==
