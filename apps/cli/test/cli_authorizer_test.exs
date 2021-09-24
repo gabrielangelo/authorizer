@@ -226,4 +226,23 @@ defmodule Cli.Test.CliAuthorizerTest do
            ] ==
              Authorizer.main([])
   end
+
+  test "shouldn't return high-frequency-small-interval violation", %{time: time} do
+    expect(StdinMock, :read_data, fn ->
+      [
+        "{\"account\":{\"active-card\":true,\"available-limit\":1000,\"violations\":[]}}",
+        "{\"transaction\": {\"merchant\": \"Vivara\", \"amount\": 1250, \"time\": \"#{time}\"}}\n",
+        "{\"transaction\": {\"merchant\": \"Samsung\", \"amount\": 2500, \"time\": \"#{time}\"}}\n",
+        "{\"transaction\": {\"merchant\": \"Nike\", \"amount\": 800, \"time\": \"#{time}\"}}\n",
+        "{\"transaction\": {\"merchant\": \"Uber\", \"amount\": 80, \"time\": \"#{time}\"}}\n"
+      ]
+    end)
+
+    assert ["{\"account\":{\"active-card\":true,\"available-limit\":1000,\"violations\":[]}}",
+    "{\"account\":{\"active-card\":true,\"available-limit\":1000,\"violations\":[\"insufficient-limit\"]}}",
+    "{\"account\":{\"active-card\":true,\"available-limit\":1000,\"violations\":[\"insufficient-limit\"]}}",
+    "{\"account\":{\"active-card\":true,\"available-limit\":200,\"violations\":[]}}",
+    "{\"account\":{\"active-card\":true,\"available-limit\":120,\"violations\":[]}}"]
+    == Authorizer.main([])
+  end
 end
