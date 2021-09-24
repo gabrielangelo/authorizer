@@ -7,7 +7,7 @@ defmodule Core.Transactions.Policies.TimeWindow do
   alias Core.Ledger
 
   @max_transactions_processed_in_window 3
-  @window_time_in_seconds 120
+  @window_time_in_minutes 2
 
   @doc """
     Process the transactions that are inside the window interval
@@ -16,9 +16,10 @@ defmodule Core.Transactions.Policies.TimeWindow do
     account movement will be increased here.
     transactions with status processed=true are operations settled
   """
-  @spec apply(Core.Types.AuthorizeTransactionsHistory.t(), DateTime.t()) :: AuthorizeTransactionsInput.t()
-  def apply(data, now \\ DateTime.utc_now()) do
-    time_ago = now |> DateTime.add(-@window_time_in_seconds, :second)
+  @spec apply(Core.Types.AuthorizeTransactionsHistory.t(), DateTime.t()) ::
+          AuthorizeTransactionsInput.t()
+  def apply(data, now) do
+    time_ago = now |> DateTime.add(:timer.minutes(@window_time_in_minutes) * -1 , :millisecond)
     transactions = data.transactions
     data = Map.put(data, :processed_transactions_count, 0)
 
@@ -45,7 +46,8 @@ defmodule Core.Transactions.Policies.TimeWindow do
                 processed_transactions_count: history.processed_transactions_count,
                 index: index,
                 transactions_log: history.transactions_log,
-                result: nil
+                result: nil,
+                time_ago: time_ago
               }
               |> apply_time_window_policies()
 
@@ -115,9 +117,7 @@ defmodule Core.Transactions.Policies.TimeWindow do
     Map.put(data, :result, result)
   end
 
-  defp get_merchant_and_amount(transactions, now) do
-    time_ago = now |> DateTime.add(-@window_time_in_seconds, :second)
-
+  defp get_merchant_and_amount(transactions, now, time_ago) do
     transactions
     |> Enum.reduce([], fn transaction, transaction_info_log ->
       if is_inside_time_window?(time_ago, now, transaction.time) do
@@ -151,11 +151,12 @@ defmodule Core.Transactions.Policies.TimeWindow do
          %{
            transactions_log: transactions_log,
            now: now,
-           result: result
+           result: result,
+           time_ago: time_ago
          } = data
        ) do
     # transactions indexed by #{transaction.merchant}/#{transaction.amount}"
-    transaction_info_log_in_last_time = get_merchant_and_amount(transactions_log, now)
+    transaction_info_log_in_last_time = get_merchant_and_amount(transactions_log, now, time_ago)
     {account, transaction} = result
 
     result =

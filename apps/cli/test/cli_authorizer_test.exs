@@ -127,7 +127,7 @@ defmodule Cli.Test.CliAuthorizerTest do
              Authorizer.main([])
   end
 
-  test "test high-frequency-small-interval", %{time: time, now: now} do
+  test "test high-frequency-small-interval", %{time: time, time_after: time_after} do
     expect(StdinMock, :read_data, fn ->
       [
         "{\"account\": {\"active-card\": true, \"available-limit\": 100}}",
@@ -135,7 +135,7 @@ defmodule Cli.Test.CliAuthorizerTest do
         "{\"transaction\": {\"merchant\": \"Habbib's\", \"amount\": 20, \"time\": \"#{time}\"}}\n",
         "{\"transaction\": {\"merchant\": \"McDonald's\", \"amount\": 20, \"time\": \"#{time}\"}}\n",
         "{\"transaction\": {\"merchant\": \"Subway\", \"amount\": 20, \"time\": \"#{time}\"}}\n",
-        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 10, \"time\": \"#{now}\"}}"
+        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 10, \"time\": \"#{time_after}\"}}"
       ]
     end)
 
@@ -238,11 +238,13 @@ defmodule Cli.Test.CliAuthorizerTest do
       ]
     end)
 
-    assert ["{\"account\":{\"active-card\":true,\"available-limit\":1000,\"violations\":[]}}",
-    "{\"account\":{\"active-card\":true,\"available-limit\":1000,\"violations\":[\"insufficient-limit\"]}}",
-    "{\"account\":{\"active-card\":true,\"available-limit\":1000,\"violations\":[\"insufficient-limit\"]}}",
-    "{\"account\":{\"active-card\":true,\"available-limit\":200,\"violations\":[]}}",
-    "{\"account\":{\"active-card\":true,\"available-limit\":120,\"violations\":[]}}"]
-    == Authorizer.main([])
+    assert [
+             "{\"account\":{\"active-card\":true,\"available-limit\":1000,\"violations\":[]}}",
+             "{\"account\":{\"active-card\":true,\"available-limit\":1000,\"violations\":[\"insufficient-limit\"]}}",
+             "{\"account\":{\"active-card\":true,\"available-limit\":1000,\"violations\":[\"insufficient-limit\"]}}",
+             "{\"account\":{\"active-card\":true,\"available-limit\":200,\"violations\":[]}}",
+             "{\"account\":{\"active-card\":true,\"available-limit\":120,\"violations\":[]}}"
+           ] ==
+             Authorizer.main([])
   end
 end

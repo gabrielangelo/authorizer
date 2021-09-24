@@ -87,7 +87,6 @@ defmodule Cli.Readers.AuhtorizerReader do
 
     accounts = get_accounts(items)
 
-
     if len_items == length(accounts) do
       {account, [account | accounts], "all_accounts"}
     else
