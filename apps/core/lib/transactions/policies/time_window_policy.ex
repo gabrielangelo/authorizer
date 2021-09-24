@@ -20,7 +20,7 @@ defmodule Core.Transactions.Policies.TimeWindow do
           AuthorizeTransactionsInput.t()
   def apply(data) do
 
-    {initial_time, end_time, [transactions_in_last_minutes, transactions_outer_limit]} =
+    {initial_time, end_time, [transactions_in_last_minutes, transactions_out_of_time_window]} =
       get_transactions_within_time_interval(data.transactions)
 
     applied_data =
@@ -29,7 +29,7 @@ defmodule Core.Transactions.Policies.TimeWindow do
       |> apply_policy_2(initial_time, end_time)
 
     Map.merge(data, %{
-      transactions_log: applied_data.transactions_log ++ transactions_outer_limit,
+      transactions_log: applied_data.transactions_log ++ transactions_out_of_time_window,
       account_movements_log: applied_data.account_movements_log
     })
   end
@@ -42,7 +42,7 @@ defmodule Core.Transactions.Policies.TimeWindow do
     items =
       Enum.reduce(
         transactions,
-        %{transactions_in_last_minutes: [], transactions_outer_limit: []},
+        %{transactions_in_last_minutes: [], transactions_out_of_time_window: []},
         fn transaction, acc ->
           case is_inside_time_window?(initial_time, end_time, transaction.time) do
             true ->
@@ -51,7 +51,7 @@ defmodule Core.Transactions.Policies.TimeWindow do
               ])
 
             false ->
-              Map.put(acc, :transactions_outer_limit, [transaction | acc.transactions_outer_limit])
+              Map.put(acc, :transactions_out_of_time_window, [transaction | acc.transactions_out_of_time_window])
           end
         end
       )
