@@ -15,12 +15,11 @@ defmodule Core.Transactions.AuthorizeTransactions do
 
   @spec execute(account :: map(), transactions :: [map()]) :: [Account.t()] | {:error, any()}
   def execute(account, transactions) do
-    now = DateTime.utc_now()
     account = account || %{}
 
     with {:ok, account} <- ValueObject.cast_and_apply(account, Account),
          {:ok, transactions} <- apply_changes_in_transactions(transactions),
-         {:ok, result} <- process_transactions(account, transactions, now) do
+         {:ok, result} <- process_transactions(account, transactions) do
       Enum.reverse(result.account_movements_log)
     else
       {:error, %Ecto.Changeset{valid?: false}} ->
@@ -41,7 +40,7 @@ defmodule Core.Transactions.AuthorizeTransactions do
      |> Enum.map(&elem(&1, 1))}
   end
 
-  defp process_transactions(account, transactions, now) do
+  defp process_transactions(account, transactions) do
     # Mounts the data structure, this means like a 'history' of transactions
     data = %Core.Types.AuthorizeTransactionsHistory{
       account_movements_log: [account],
@@ -51,7 +50,7 @@ defmodule Core.Transactions.AuthorizeTransactions do
 
     result =
       data
-      |> TimeWindowPolicy.apply(now)
+      |> TimeWindowPolicy.apply()
       |> apply()
 
     {:ok, result}

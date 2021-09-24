@@ -16,24 +16,51 @@ defmodule Core.Transactions.Policies.TimeWindow do
     account movement will be increased here.
     transactions with status processed=true are operations settled
   """
-  @spec apply(Core.Types.AuthorizeTransactionsHistory.t(), DateTime.t()) ::
+  @spec apply(Core.Types.AuthorizeTransactionsHistory.t()) ::
           AuthorizeTransactionsInput.t()
-  def apply(data, now) do
-    %{
-      last_transactions: %{now: last_transactions_now, transactions: last_transactions},
-      old_transactions: %{now: old_transaction_now, transactions: old_transactions}
-    } = set_times(now, data.transactions)
+  def apply(data) do
 
-    data
-    |> Map.put(:transactions, old_transactions)
-    |> apply_policy(old_transaction_now |> DateTime.add(:timer.minutes(2), :millisecond))
-    |> Map.put(:transactions, last_transactions)
-    |> apply_policy(last_transactions_now)
+    {initial_time, end_time, [transactions_in_last_minutes, transactions_outer_limit]} =
+      get_transactions_within_time_interval(data.transactions)
+
+    applied_data =
+      data
+      |> Map.put(:transactions, transactions_in_last_minutes)
+      |> apply_policy_2(initial_time, end_time)
+
+    Map.merge(data, %{
+      transactions_log: applied_data.transactions_log ++ transactions_outer_limit,
+      account_movements_log: applied_data.account_movements_log
+    })
   end
 
-  defp apply_policy(data, now) do
-    time_ago = now |> DateTime.add(:timer.minutes(@window_time_in_minutes) * -1, :second)
+  def get_transactions_within_time_interval(transactions) do
+    [transaction | _] = transactions
+    initial_time = transaction.time
+    end_time = DateTime.add(transaction.time, :timer.minutes(@window_time_in_minutes), :millisecond)
 
+    items =
+      Enum.reduce(
+        transactions,
+        %{transactions_in_last_minutes: [], transactions_outer_limit: []},
+        fn transaction, acc ->
+          case is_inside_time_window?(initial_time, end_time, transaction.time) do
+            true ->
+              Map.put(acc, :transactions_in_last_minutes, [
+                transaction | acc.transactions_in_last_minutes
+              ])
+
+            false ->
+              Map.put(acc, :transactions_outer_limit, [transaction | acc.transactions_outer_limit])
+          end
+        end
+      )
+      |> Enum.map(fn {_, list} -> Enum.reverse(list) end)
+
+    {initial_time, end_time, items}
+  end
+
+  defp apply_policy_2(data, time_ago, now) do
     data.transactions
     |> Enum.with_index()
     |> Enum.reduce(data, fn
@@ -43,11 +70,8 @@ defmodule Core.Transactions.Policies.TimeWindow do
         # acummulated transactions
         processed_transactions = history.transactions_log
 
-        case {
-          is_inside_time_window?(time_ago, now, transaction.time),
-          Ledger.check_limit(account, transaction)
-        } do
-          {true, {%Account{violations: _} = new_account_movement, transaction_processed}} ->
+        case Ledger.check_limit(account, transaction) do
+          {%Account{violations: _} = new_account_movement, transaction_processed} ->
             # apply time window policy
             {%Account{violations: violations} = applied_account_movement, transaction} =
               %{
@@ -85,74 +109,8 @@ defmodule Core.Transactions.Policies.TimeWindow do
                 processed_transactions_count: history.processed_transactions_count + 1
               })
             end
-
-          {false, _} ->
-            Map.merge(
-              history,
-              %{
-                transactions_log: [
-                  transaction
-                  | processed_transactions
-                ]
-              }
-            )
         end
     end)
-  end
-
-  defp set_times(now, transactions) do
-    time_ago = now |> DateTime.add(:timer.minutes(@window_time_in_minutes) * -1, :millisecond)
-
-    case check_time_line(time_ago, transactions) do
-      {[], [_ | _] = last_transactions} ->
-        %{
-          last_transactions: %{now: now, transactions: last_transactions},
-          old_transactions: %{now: now, transactions: []}
-        }
-
-      {[_ | _] = old_transactions, []} ->
-        [last_old_transaction | _] = old_transactions
-
-        %{
-          last_transactions: %{now: now, transactions: []},
-          old_transactions: %{now: last_old_transaction.time, transactions: old_transactions}
-        }
-
-      {old_transactions, last_transactions}
-      when old_transactions != [] and last_transactions != [] ->
-        [last_old_transaction | _] = old_transactions
-
-        %{
-          last_transactions: %{now: now, transactions: last_transactions},
-          old_transactions: %{now: last_old_transaction.time, transactions: old_transactions}
-        }
-
-      {[], []} ->
-        %{
-          last_transactions: %{now: now, transactions: []},
-          old_transactions: %{now: now, transactions: []}
-        }
-    end
-  end
-
-  defp check_time_line(time_ago, transactions) do
-    time_ago = DateTime.truncate(time_ago, :second)
-
-    result =
-      Enum.reduce(transactions, %{old_transactions: [], actual_transactions: []}, fn transaction,
-                                                                                     acc ->
-        transaction_time = DateTime.truncate(transaction.time, :millisecond)
-
-        less_time_ago = DateTime.compare(transaction_time, time_ago) == :lt
-
-        if less_time_ago do
-          Map.put(acc, :old_transactions, [transaction | acc.old_transactions])
-        else
-          Map.put(acc, :actual_transactions, [transaction | acc.actual_transactions])
-        end
-      end)
-
-    {Enum.reverse(result.old_transactions), Enum.reverse(result.actual_transactions)}
   end
 
   defp apply_time_window_policies(data) do
@@ -198,9 +156,10 @@ defmodule Core.Transactions.Policies.TimeWindow do
   defp is_inside_time_window?(time_ago, now, transaction_time) do
     transaction_time = DateTime.truncate(transaction_time, :second)
 
-    bigger_or_equal  =
+    bigger_or_equal =
       DateTime.compare(transaction_time, time_ago) == :eq or
         DateTime.compare(transaction_time, time_ago) == :gt
+
     less_than = DateTime.compare(transaction_time, now) == :lt
 
     if bigger_or_equal and less_than do
