@@ -6,7 +6,7 @@ defmodule Cli.Test.AuthorizeReaderTest do
 
   alias Cli.Readers.AuhtorizerReader
 
-  test "test entry staring with transaction" do
+  test "test entry starting with transaction" do
     data = [
       %{
         "transaction" => %{
@@ -34,6 +34,7 @@ defmodule Cli.Test.AuthorizeReaderTest do
                   "time" => "2020-12-01T11:07:00.000Z"
                 }
               ], "non_initialized_accounts_with_transactions"},
+
              {%{"active-card" => true, "available-limit" => 225},
               [
                 %{
@@ -43,7 +44,6 @@ defmodule Cli.Test.AuthorizeReaderTest do
                 }
               ], "accounts_with_transactions"}
            ] == AuhtorizerReader.read(data)
-  end
 
   test "test 2 accounts case " do
     data = [

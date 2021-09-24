@@ -21,9 +21,10 @@ defmodule Core.Accounts.CreateAccount do
     accounts
     |> Enum.group_by(fn {:ok, account} -> account.virtual_id end, &elem(&1, 1))
     |> Enum.map(fn
-      {_, [account | _] = list_ids} when length(list_ids) > 1 ->
-        Logger.info("account-already-initialize, account: inspect(#{account})")
-        Enum.map(1..length(list_ids), fn _ -> %{account | violations: ["account-already-initialized"]} end)
+      {_, [account| _] = list_accounts} when length(list_accounts) > 1 ->
+        Enum.map(1..length(list_accounts), fn _ ->
+          %{account | violations: ["account-already-initialized"]}
+        end)
 
       {_, [account | _] = list_ids} when length(list_ids) == 1 ->
         Logger.info("account successfully created")

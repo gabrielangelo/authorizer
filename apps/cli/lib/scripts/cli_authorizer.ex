@@ -73,9 +73,16 @@ defmodule Cli.Scripts.Authorizer do
     fn -> AuthorizeTransactions.execute(account, transactions) end
   end
 
-  defp process_results({account, accounts, "accounts"}) do
+  defp process_results({account, [], "accounts"}) do
     fn ->
-      [account | accounts]
+      [account]
+      |> CreateAccount.execute()
+    end
+  end
+
+  defp process_results({_, accounts, "accounts"}) do
+    fn ->
+      accounts
       |> CreateAccount.execute()
     end
   end

@@ -12,19 +12,20 @@ defmodule Cli.Readers.AuhtorizerReader do
     Logger.info("Mounting authorizer data")
     [f_item | head] = data
 
-    test =
-      case read_first_item(f_item, head) do
-        {%{}, _, "non_initialized_accounts_with_transactions"} = item ->
-          [item]
+    case read_first_item(f_item, head) do
+      {%{}, _, "non_initialized_accounts_with_transactions"} = item ->
 
-        _ ->
-          []
-      end
+        process(data, [item])
+      {account, accounts, "all_accounts"} ->
+        [{account, accounts, "accounts"}]
 
-    data
-    |> receive_data(test)
-    |> Enum.filter(&(not is_nil(&1))) |> Enum.reverse()
+      _ ->
+        process(data, [])
+
+    end
   end
+
+  defp process(data, items), do: data |> receive_data(items) |> Enum.filter(&(not is_nil(&1))) |> Enum.reverse()
 
   defp receive_data([], test), do: test
 
@@ -35,9 +36,7 @@ defmodule Cli.Readers.AuhtorizerReader do
     receive_data(head, test)
   end
 
-  defp read(%{"account" => account_data}, items) do
-    Logger.info("mounting account params #{inspect(account_data)}")
-
+  defp read(%{"account" => account_data}, items) when items != [] do
     transactions = get_transactions(items)
 
     if transactions == [] do
@@ -49,11 +48,13 @@ defmodule Cli.Readers.AuhtorizerReader do
           end
         end)
 
-      {account_data, accounts, "accounts"}
+      gen_accounts({account_data, accounts, "accounts"})
     else
       {account_data, transactions, "accounts_with_transactions"}
     end
   end
+
+  defp read(%{"account" => account_data}, []), do: {account_data, [], "accounts"}
 
   defp read(%{"transaction" => _}, _), do: nil
 
@@ -68,11 +69,31 @@ defmodule Cli.Readers.AuhtorizerReader do
     |> Enum.reverse()
   end
 
+  defp gen_accounts({account, items, "accounts" = type}), do: {account, [account | items], type}
+
   defp read_first_item(%{"transaction" => transaction}, items) do
     transactions = get_transactions(items)
 
     {%{}, [transaction | transactions], "non_initialized_accounts_with_transactions"}
   end
 
-  defp read_first_item(%{"account" => account}, _), do: {account, [], "account_as_first_index"}
+  defp read_first_item(%{"account" => account}, []), do: {account, [], "account_as_first_index"}
+
+  defp read_first_item(%{"account" => account}, items) do
+    len_items = length(items)
+
+    accounts =
+      Enum.reduce_while(items, [], fn item, acc ->
+        case Map.get(item, "account") do
+          nil -> {:halt, acc}
+          account_data -> {:cont, [account_data | acc]}
+        end
+      end)
+
+    if len_items == length(accounts) do
+      {account, [account | accounts], "all_accounts"}
+    else
+      {account, [], "account_as_first_index"}
+    end
+  end
 end
