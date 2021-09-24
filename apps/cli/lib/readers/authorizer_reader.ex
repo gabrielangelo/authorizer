@@ -12,7 +12,7 @@ defmodule Cli.Readers.AuhtorizerReader do
     Logger.info("Mounting authorizer data")
     [f_item | head] = data
 
-    case read_first_item(f_item, head) do
+    case pre_read(f_item, head) do
       {%{}, _, "non_initialized_accounts_with_transactions"} = item ->
 
         process(data, [item])
@@ -71,15 +71,15 @@ defmodule Cli.Readers.AuhtorizerReader do
 
   defp gen_accounts({account, items, "accounts" = type}), do: {account, [account | items], type}
 
-  defp read_first_item(%{"transaction" => transaction}, items) do
+  defp pre_read(%{"transaction" => transaction}, items) do
     transactions = get_transactions(items)
 
     {%{}, [transaction | transactions], "non_initialized_accounts_with_transactions"}
   end
 
-  defp read_first_item(%{"account" => account}, []), do: {account, [], "account_as_first_index"}
+  defp pre_read(%{"account" => account}, []), do: {account, [], "account_as_first_index"}
 
-  defp read_first_item(%{"account" => account}, items) do
+  defp pre_read(%{"account" => account}, items) do
     len_items = length(items)
 
     accounts =
