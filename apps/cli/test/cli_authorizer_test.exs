@@ -76,12 +76,17 @@ defmodule Cli.Test.CliAuthorizerTest do
     expect(StdinMock, :read_data, fn ->
       [
         "{\"transaction\": {\"merchant\": \"Uber Eats\", \"amount\": 25, \"time\": \"#{time}\"}}\n",
-        "{\"account\": {\"active-card\": true, \"available-limit\": 100}}\n",
+        "{\"account\": {\"active-card\": true, \"available-limit\": 225}}\n",
         "{\"transaction\": {\"merchant\": \"Habbib's\", \"amount\": 25, \"time\": \"#{now}\"}}\n"
       ]
     end)
 
-    Authorizer.main([])
+    assert [
+             "{\"account\":{\"active-card\":null,\"available-limit\":null,\"violations\":[\"account-not-initialized\"]}}",
+             "{\"account\":{\"active-card\":true,\"available-limit\":225,\"violations\":[]}}",
+             "{\"account\":{\"active-card\":true,\"available-limit\":200,\"violations\":[]}}"
+           ] ==
+             Authorizer.main([])
   end
 
   test "test card not active", %{time: time, now: now} do

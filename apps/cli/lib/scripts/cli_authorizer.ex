@@ -61,6 +61,7 @@ defmodule Cli.Scripts.Authorizer do
 
       {:ok, results} ->
         results
+        |> Enum.reverse()
         |> List.flatten()
     end
   end
