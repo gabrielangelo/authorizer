@@ -40,13 +40,7 @@ defmodule Cli.Readers.AuhtorizerReader do
     transactions = get_transactions(items)
 
     if transactions == [] do
-      accounts =
-        Enum.reduce_while(items, [], fn item, acc ->
-          case Map.get(item, "account") do
-            nil -> {:halt, acc}
-            account_data -> {:cont, [account_data | acc]}
-          end
-        end)
+      accounts = get_accounts(items)
 
       gen_accounts({account_data, accounts, "accounts"})
     else
@@ -57,6 +51,15 @@ defmodule Cli.Readers.AuhtorizerReader do
   defp read(%{"account" => account_data}, []), do: {account_data, [], "accounts"}
 
   defp read(%{"transaction" => _}, _), do: nil
+
+  defp get_accounts(items) do
+    Enum.reduce_while(items, [], fn item, acc ->
+      case Map.get(item, "account") do
+        nil -> {:halt, acc}
+        account_data -> {:cont, [account_data | acc]}
+      end
+    end)
+  end
 
   defp get_transactions(items) do
     items
@@ -82,13 +85,8 @@ defmodule Cli.Readers.AuhtorizerReader do
   defp pre_read(%{"account" => account}, items) do
     len_items = length(items)
 
-    accounts =
-      Enum.reduce_while(items, [], fn item, acc ->
-        case Map.get(item, "account") do
-          nil -> {:halt, acc}
-          account_data -> {:cont, [account_data | acc]}
-        end
-      end)
+    accounts = get_accounts(items)
+
 
     if len_items == length(accounts) do
       {account, [account | accounts], "all_accounts"}

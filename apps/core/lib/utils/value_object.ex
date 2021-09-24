@@ -108,6 +108,6 @@ defmodule Core.Utils.ValueObject do
   defp to_atom(v) do
     v
     |> String.replace("-", "_")
-    |> String.to_existing_atom()
+    |> String.to_atom()
   end
 end
