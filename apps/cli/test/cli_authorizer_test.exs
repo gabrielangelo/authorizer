@@ -272,4 +272,31 @@ defmodule Cli.Test.CliAuthorizerTest do
            ] ==
              Authorizer.main([])
   end
+
+  test "extreme case", %{now: now} do
+    expect(StdinMock, :read_data, fn ->
+      [
+        "{\"account\": {\"active-card\": true, \"available-limit\": 100}}\n",
+        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 20, \"time\": \"2019-02-13T11:00:00.000Z\"}}\n",
+        "{\"transaction\": {\"merchant\": \"Habbib's\", \"amount\": 20, \"time\": \"2019-02-13T11:00:01.000Z\"}}\n",
+        "{\"transaction\": {\"merchant\": \"McDonald's\", \"amount\": 20, \"time\": \"2019-02-13T11:01:01.000Z\"}}\n",
+        "{\"transaction\": {\"merchant\": \"Subway\", \"amount\": 20, \"time\": \"2019-02-13T11:01:31.000Z\"}}\n",
+        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 10, \"time\": \"2019-02-13T12:00:00.000Z\"}}",
+        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 190, \"time\": \"#{now}\"}}\n",
+        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 5, \"time\": \"#{now}\"}}\n",
+        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 150, \"time\": \"#{now}\"}}\n",
+        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 190, \"time\": \"#{now}\"}}\n",
+      ]
+    end)
+
+    # assert [
+    #          "{\"account\":{\"active-card\":true,\"available-limit\":100,\"violations\":[]}}",
+    #          "{\"account\":{\"active-card\":true,\"available-limit\":80,\"violations\":[]}}",
+    #          "{\"account\":{\"active-card\":true,\"available-limit\":60,\"violations\":[]}}",
+    #          "{\"account\":{\"active-card\":true,\"available-limit\":40,\"violations\":[]}}",
+    #          "{\"account\":{\"active-card\":true,\"available-limit\":40,\"violations\":[\"high_frequency_small_interval\"]}}",
+    #          "{\"account\":{\"active-card\":true,\"available-limit\":30,\"violations\":[]}}"
+    #        ] ==
+             Authorizer.main([]) |> IO.inspect()
+  end
 end

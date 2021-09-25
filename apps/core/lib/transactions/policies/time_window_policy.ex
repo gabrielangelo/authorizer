@@ -19,27 +19,77 @@ defmodule Core.Transactions.Policies.TimeWindow do
   @spec apply(Core.Types.AuthorizeTransactionsHistory.t()) ::
           AuthorizeTransactionsInput.t()
   def apply(data) do
+    data.transactions |> IO.inspect(label: :transactions)
+    |> get_transactions_within_window_time([])
+    |> Enum.reverse()|> IO.inspect(label: :get_transactions_within_window_time)
+    |> Enum.reduce(data, fn item, history ->
+      case item do
+        {initial_time, end_time, [transactions_in_last_minutes, transactions_out_of_time_window]}
+        when length(transactions_in_last_minutes) > 3 ->
+          # IO.inspect("processing")
+          # IO.inspect(transactions_in_last_minutes)
 
-    {initial_time, end_time, [transactions_in_last_minutes, transactions_out_of_time_window]} =
-      get_transactions_within_time_interval(data.transactions)
+          applied_data =
+            history
+            |> Map.put(:transactions, transactions_in_last_minutes)
+            |> Map.put(:transactions_log, data.transactions_log)
+            |> apply_policy(initial_time, end_time)
 
-    applied_data =
-      data
-      |> Map.put(:transactions, transactions_in_last_minutes)
-      |> apply_policy(initial_time, end_time)
+          # IO.inspect(applied_data.transactions_log, label: :transactions_log)
 
-    Map.merge(data, %{
-      transactions_log: applied_data.transactions_log ++ transactions_out_of_time_window,
-      account_movements_log: applied_data.account_movements_log
-    })
+          Map.merge(history, %{
+            transactions_log: applied_data.transactions_log ++ transactions_out_of_time_window,
+            account_movements_log: applied_data.account_movements_log
+          })
+
+        _ ->
+          transactions_log =
+            if(history.transactions_log != [],
+              do: history.transactions_log,
+              else: data.transactions
+            )
+
+          history |> Map.put(:transactions_log, transactions_log)
+      end
+    end)
+
+    # {initial_time, end_time, [transactions_in_last_minutes, transactions_out_of_time_window]} =
+    #   get_transactions_within_time_interval(data.transactions)
+
+    # applied_data =
+    #   data
+    #   |> Map.put(:transactions, transactions_in_last_minutes)
+    #   |> apply_policy(initial_time, end_time)
+
+    # Map.merge(data, %{
+    #   transactions_log: applied_data.transactions_log ++ transactions_out_of_time_window,
+    #   account_movements_log: applied_data.account_movements_log
+    # })
   end
 
-  def get_transactions_within_time_interval(transactions) do
+  defp get_transactions_within_window_time(transactions, items) do
+    case get_transactions_within_time_interval(transactions) do
+      {_, _, [transactions_inside_time_window, transactions_out_of_time_window]} = result
+      when length(transactions_inside_time_window) > 1 and transactions_out_of_time_window != [] ->
+        get_transactions_within_window_time(transactions_out_of_time_window, [result | items])
+
+      {_, _, [_, transactions_out_of_time_window]} when transactions_out_of_time_window != [] ->
+        [get_transactions_within_time_interval(transactions_out_of_time_window) | items]
+
+      result ->
+        [result | items]
+        Enum.reverse([result | items])
+    end
+  end
+
+  defp get_transactions_within_time_interval(transactions) do
     [transaction | _] = transactions
     initial_time = transaction.time
-    end_time = DateTime.add(transaction.time, :timer.minutes(@window_time_in_minutes), :millisecond)
 
-    items =
+    end_time =
+      DateTime.add(transaction.time, :timer.minutes(@window_time_in_minutes), :millisecond)
+
+    transactions_inside_time_window =
       Enum.reduce(
         transactions,
         %{transactions_in_last_minutes: [], transactions_out_of_time_window: []},
@@ -51,13 +101,15 @@ defmodule Core.Transactions.Policies.TimeWindow do
               ])
 
             false ->
-              Map.put(acc, :transactions_out_of_time_window, [transaction | acc.transactions_out_of_time_window])
+              Map.put(acc, :transactions_out_of_time_window, [
+                transaction | acc.transactions_out_of_time_window
+              ])
           end
         end
       )
       |> Enum.map(fn {_, list} -> Enum.reverse(list) end)
 
-    {initial_time, end_time, items}
+    {initial_time, end_time, transactions_inside_time_window}
   end
 
   defp apply_policy(data, time_ago, now) do
@@ -67,7 +119,7 @@ defmodule Core.Transactions.Policies.TimeWindow do
       {transaction, index}, history ->
         [account | _] = accounts_movements = history.account_movements_log
 
-        # acummulated transactions
+        # increased transactions
         processed_transactions = history.transactions_log
 
         case Ledger.check_limit(account, transaction) do
