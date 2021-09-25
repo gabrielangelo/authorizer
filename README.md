@@ -88,13 +88,12 @@ Pode-se usar o arquivo `"operations_sample.json"` para um primeiro caso de teste
 - [Dialyzer](https://github.com/jeremyjh/dialyxir) -> Análise de código estático de código.
 
 ## Nota sobre algumas decisões técnicas
-- Uso da linguagem de programação elixir -> aproveitar o poder da BEAM para concorrência.
-- Trata-se de uma aplicação umbrella que gerencia 2 aplicações:
+- Uso da linguagem de programação elixir para aproveitar o poder da [BEAM](https://blog.erlang.org/a-brief-BEAM-primer/).
+- Trata-se de uma aplicação [umbrella](https://elixir-lang.org/getting-started/mix-otp/dependencies-and-umbrella-projects.html#umbrella-projects) que gerencia 2 aplicações:
   - Core: O núcleo da regra de negócio da aplicação, nela encontra-se os modelos de conta e transação como também as rotinas do autorizador;
   - Cli: A aplicação responsável por ler os dados do stdin e criar as entradas corretas para as funções de regras de negócio da aplicação Core;
   - Ambas as aplicações se conversam. 
-- A arch foi concebida para ser basicamente um "map-reduce" de entradas que são escalonadas para diferentes processos que executam concorrentemente. A saída ( Accounts ) é um "reduce"
-  dos outputs de cada processo. O módulo usado: [Task.async_stream/3](https://hexdocs.pm/elixir/1.12/Task.html#async_stream/3)
+- A arch foi concebida para ser basicamente um "map-reduce" de entradas que são escalonadas para diferentes processos que executam concorrentemente. A saída ( Accounts ) é um "reduce" dos outputs de cada processo. Função usada: [Task.async_stream/3](https://hexdocs.pm/elixir/1.12/Task.html#async_stream/3)
 - Cada instância Core.Transactions.AuthorizeTransactions é uma operação de batch que executa uma lista de transações de uma determinada conta. Ou seja, é escalonado um processo para
   cada conta e suas operações ( Seja autorização de transações ou criação de contas)
 
@@ -115,6 +114,5 @@ Pode-se usar o arquivo `"operations_sample.json"` para um primeiro caso de teste
  
  `"settled_transactions_count"`: contador de transações liquidadas, usada na contagem de transações no apply de policy de janela de tempo.
 
-- Geração de um **binário** que encapsula todo o software construído. É mais flexível para ambientes que não tem elixir instalado. Além disso, 
-  pode-se adiciona-lo no diretório /bin e usá-lo de qualquer outro dir do sistema operacional.
+- Geração de um **binário** que encapsula todo o software construído. É mais flexível para ambientes que não tem elixir instalado. Além disso, pode-se adiciona-lo no diretório /bin e usá-lo de qualquer outro dir do sistema operacional.
 - Dockerização da aplicação, também é interessante usar um ambiente isolado para ambientes que não tem erlang instalado. 
