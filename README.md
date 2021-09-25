@@ -116,6 +116,6 @@ Pode-se usar o arquivo `"operations_sample.json"` para um primeiro caso de teste
 
 - Geração de um **binário** que encapsula todo o software construído. É mais flexível para ambientes que não tem elixir instalado. Além disso, pode-se adiciona-lo no diretório /bin e usá-lo de qualquer outro dir do sistema operacional.
 - Dockerização da aplicação, também é interessante usar um ambiente isolado para ambientes que não tem erlang instalado. 
-- Foram adicionados testes de integração fortes que parte desde a recepção de dados mockados( simulação de dados vindo de stdin) até a renderização.
-- Os testes unitários do Core.Transactions.AuthorizeTransactions estão relacionados fortemente com os testes de integração de Cli.Scripts.Authorizer, ou seja,
-  se um teste Core.Transactions.AuthorizeTransactions, o teste de integração equivalente em Cli.Scripts.Authorize tabmbém falhará, pois ambos retorna informações sob um formato lógico praticamente igual, a única diferença é que um usa estruturas do elixir e o outro strings simples. Poreḿ o valor informacional é o mesmo.
+- Foram adicionados testes de integração fortes que parte desde a recepção de dados mockados(simulação de dados vindo de stdin) até a renderização.
+- Os testes unitários do **Core.Transactions.AuthorizeTransactions** estão relacionados fortemente com os testes de integração de **Cli.Scripts.Authorizer**, ou seja,
+  se um teste **Core.Transactions.AuthorizeTransactions**, o teste de integração equivalente em **Cli.Scripts.Authorize** também falhará, pois ambos retornam informações sob um formato lógico praticamente igual, a única diferença é que um usa estruturas do elixir e o outro strings simples.
