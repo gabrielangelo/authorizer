@@ -81,35 +81,40 @@ Pode-se usar o arquivo `"operations_sample.json"` para um primeiro caso de teste
  7. O Core.Transactions.AuthorizeTransactions retorna as movimentações de conta que serão o input do Cli.Renders.Account.render() gerando assim o output da CLI.
    
 ## Libs externas
-    - Jason [here](https://github.com/michalmuskala/jason) -> decode de json para map;
-    - Ecto (https://hexdocs.pm/ecto/Ecto.html) -> criação dos models de memória de account e transaction, podendo ser extendido para modelo de banco de dados no futuro;
-    - mox (https://github.com/dashbitco/mox) -> Criação de mocks para o stdin;
-    - credo (https://github.com/rrrene/credo) -> Análise de código estático de código;
-    - dialyzer (https://github.com/jeremyjh/dialyxir) -> Análise de código estático de código.
+- [Jason](https://github.com/michalmuskala/jason) -> decode de json para map;
+- [Ecto](https://hexdocs.pm/ecto/Ecto.html) -> criação dos models de memória de account e transaction, podendo ser extendido para modelo de banco de dados no futuro;
+- [Mox](https://github.com/dashbitco/mox) -> Criação de mocks para o stdin;
+- [Credo](https://github.com/rrrene/credo) -> Análise de código estático de código;
+- [Dialyzer](https://github.com/jeremyjh/dialyxir) -> Análise de código estático de código.
 
 ## Nota sobre algumas decisões técnicas
-    - Uso da linguagem de programação elixir -> aproveitar o poder da BEAM para concorrência.
-    - Trata-se de uma aplicação umbrella que gerencia 2 aplicações:
-      - Core: O núcleo da regra de negócio da aplicação, nela encontra-se os modelos de conta e transação como também as rotinas do autorizador;
-      - Cli: A aplicação responsável por ler os dados do stdin e criar as entradas corretas para as funções de regras de negócio da aplicação Core;
-      - Ambas as aplicações se conversam. 
-    - A arch foi concebida para ser basicamente um "map-reduce" de entradas que são escalonadas para diferentes processos que executam concorrentemente. A saída ( Accounts ) é um "reduce"
-      dos outputs de cada processo. O módulo usado: https://hexdocs.pm/elixir/1.12/Task.html#async_stream/3
-    - Cada instância Core.Transactions.AuthorizeTransactions é uma operação de batch que executa uma lista de transações de uma determinada conta. Ou seja, é escalonado um processo para
-      cada conta e suas operações ( Seja autorização de transações ou criação de contas)
+- Uso da linguagem de programação elixir -> aproveitar o poder da BEAM para concorrência.
+- Trata-se de uma aplicação umbrella que gerencia 2 aplicações:
+  - Core: O núcleo da regra de negócio da aplicação, nela encontra-se os modelos de conta e transação como também as rotinas do autorizador;
+  - Cli: A aplicação responsável por ler os dados do stdin e criar as entradas corretas para as funções de regras de negócio da aplicação Core;
+  - Ambas as aplicações se conversam. 
+- A arch foi concebida para ser basicamente um "map-reduce" de entradas que são escalonadas para diferentes processos que executam concorrentemente. A saída ( Accounts ) é um "reduce"
+  dos outputs de cada processo. O módulo usado: [Task.async_stream/3](https://hexdocs.pm/elixir/1.12/Task.html#async_stream/3)
+- Cada instância Core.Transactions.AuthorizeTransactions é uma operação de batch que executa uma lista de transações de uma determinada conta. Ou seja, é escalonado um processo para
+  cada conta e suas operações ( Seja autorização de transações ou criação de contas)
 
-    - Cada autorizador é um "pipeline" que compartilha uma esturutura definida abaixo:
-      - Core.Types.AuthorizeTransactionsHistory{
-          account_movements_log: list(),
-          transactions: list(),
-          transactions_log: list(),
-          settled_transactions_count: integer()
-       }
-      account_movements_log: é a lista de movimenações bancárias realizadas por cada transação. O estado de cada movimentação com suas violações é guardado aqui;
-      transactions: é a lista de transações, aqui não há alteração de estado, serve apenas para um parseamento primário;
-      transactions_log: é a lista de transações processadas, essa lista é incrementada quando uma transação é liquidada ou rejeitada;
-      settled_transactions_count: contador de transações liquidadas, usada na contagem de transações no apply de policy de janela de tempo.
+- Cada autorizador é um "pipeline" que compartilha uma esturutura definida abaixo:
+  ```elixir
+   Core.Types.AuthorizeTransactionsHistory{
+      account_movements_log: list(),
+      transactions: list(),
+      transactions_log: list(),
+      settled_transactions_count: integer()
+   }```
+   
+ `"account_movements_log"`: é a lista de movimenações bancárias realizadas por cada transação. O estado de cada movimentação com suas violações é guardado aqui;
+ 
+ `"transactions"`: é a lista de transações, aqui não há alteração de estado, serve apenas para um parseamento primário;
+ 
+ `"transactions_log"`: é a lista de transações processadas, essa lista é incrementada quando uma transação é liquidada ou rejeitada;
+ 
+ `"settled_transactions_count"`: contador de transações liquidadas, usada na contagem de transações no apply de policy de janela de tempo.
 
-    - Geração de um binário que encapsula todo o software construído. É mais flexível para ambientes que não tem elixir instalado. Além disso, 
-      pode-se adicionar o binário no diretório /bin e usá-lo de qualquer outro dir do SO.
-    - Dockerização da aplicação, é interessante usar um ambiente isolado para ambientes que não tem erlang instalado. 
+- Geração de um **binário** que encapsula todo o software construído. É mais flexível para ambientes que não tem elixir instalado. Além disso, 
+  pode-se adiciona-lo no diretório /bin e usá-lo de qualquer outro dir do sistema operacional.
+- Dockerização da aplicação, também é interessante usar um ambiente isolado para ambientes que não tem erlang instalado. 
