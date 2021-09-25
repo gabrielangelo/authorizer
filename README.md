@@ -1,5 +1,5 @@
 # Authorizer
- Uma CLI escrita em Elixir  que autoriza transações para uma conta específica seguindo uma
+ Uma [CLI](https://en.wikipedia.org/wiki/Command-line_interface) escrita em [Elixir](https://elixir-lang.org/)  que autoriza transações para uma conta específica seguindo uma
 série de regras predefinidas.
 
 ## Features
@@ -92,19 +92,19 @@ Pode-se usar o arquivo `"operations_sample.json"` para um primeiro caso de teste
 - Trata-se de uma aplicação [umbrella](https://elixir-lang.org/getting-started/mix-otp/dependencies-and-umbrella-projects.html#umbrella-projects) que gerencia 2 aplicações:
   - Core: O núcleo da regra de negócio da aplicação, nela encontra-se os modelos de conta e transação como também as rotinas do autorizador;
   - Cli: A aplicação responsável por ler os dados do stdin e criar as entradas corretas para as funções de regras de negócio da aplicação Core;
-  - Ambas as aplicações se conversam. 
 - A arch foi concebida para ser basicamente um "map-reduce" de entradas que são escalonadas para diferentes processos que executam concorrentemente. A saída ( Accounts ) é um "reduce" dos outputs de cada processo. Função usada: [Task.async_stream/3](https://hexdocs.pm/elixir/1.12/Task.html#async_stream/3)
 - Cada instância Core.Transactions.AuthorizeTransactions é uma operação de batch que executa uma lista de transações de uma determinada conta. Ou seja, é escalonado um processo para
   cada conta e suas operações ( Seja autorização de transações ou criação de contas)
 
-- Cada autorizador é um "pipeline" que compartilha uma esturutura definida abaixo:
+- O autorizador é semelhante a um [pipeline](https://medium.com/@maini_rohit/hadoop-map-reduce-execution-pipeline-a9eec8c5356c) que compartilha uma esturutura definida abaixo:
   ```elixir
    Core.Types.AuthorizeTransactionsHistory{
       account_movements_log: list(),
       transactions: list(),
       transactions_log: list(),
       settled_transactions_count: integer()
-   }```
+   }
+  ```
    
  `"account_movements_log"`: é a lista de movimenações bancárias realizadas por cada transação. O estado de cada movimentação com suas violações é guardado aqui;
  
@@ -116,3 +116,6 @@ Pode-se usar o arquivo `"operations_sample.json"` para um primeiro caso de teste
 
 - Geração de um **binário** que encapsula todo o software construído. É mais flexível para ambientes que não tem elixir instalado. Além disso, pode-se adiciona-lo no diretório /bin e usá-lo de qualquer outro dir do sistema operacional.
 - Dockerização da aplicação, também é interessante usar um ambiente isolado para ambientes que não tem erlang instalado. 
+- Foram adicionados testes de integração fortes que parte desde a recepção de dados mockados( simulação de dados vindo de stdin) até a renderização.
+- Os testes unitários do Core.Transactions.AuthorizeTransactions estão relacionados fortemente com os testes de integração de Cli.Scripts.Authorizer, ou seja,
+  se um teste Core.Transactions.AuthorizeTransactions, o teste de integração equivalente em Cli.Scripts.Authorize tabmbém falhará, pois ambos retorna informações sob um formato lógico praticamente igual, a única diferença é que um usa estruturas do elixir e o outro strings simples. Poreḿ o valor informacional é o mesmo.
