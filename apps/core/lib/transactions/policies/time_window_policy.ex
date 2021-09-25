@@ -26,7 +26,7 @@ defmodule Core.Transactions.Policies.TimeWindow do
     applied_data =
       data
       |> Map.put(:transactions, transactions_in_last_minutes)
-      |> apply_policy_2(initial_time, end_time)
+      |> apply_policy(initial_time, end_time)
 
     Map.merge(data, %{
       transactions_log: applied_data.transactions_log ++ transactions_out_of_time_window,
@@ -60,7 +60,7 @@ defmodule Core.Transactions.Policies.TimeWindow do
     {initial_time, end_time, items}
   end
 
-  defp apply_policy_2(data, time_ago, now) do
+  defp apply_policy(data, time_ago, now) do
     data.transactions
     |> Enum.with_index()
     |> Enum.reduce(data, fn
@@ -78,7 +78,7 @@ defmodule Core.Transactions.Policies.TimeWindow do
                 transaction: transaction_processed,
                 account: new_account_movement,
                 now: now,
-                processed_transactions_count: history.processed_transactions_count,
+                settled_transactions_count: history.settled_transactions_count,
                 index: index,
                 transactions_log: history.transactions_log,
                 result: nil,
@@ -104,9 +104,9 @@ defmodule Core.Transactions.Policies.TimeWindow do
               Map.merge(history, %{
                 account_movements_log: [new_account_movement | accounts_movements],
                 transactions_log: [
-                  %{transaction | is_processed: true} | processed_transactions
+                  %{transaction | is_settled: true} | processed_transactions
                 ],
-                processed_transactions_count: history.processed_transactions_count + 1
+                settled_transactions_count: history.settled_transactions_count + 1
               })
             end
         end
@@ -124,12 +124,12 @@ defmodule Core.Transactions.Policies.TimeWindow do
          %{
            transaction: transaction,
            account: account,
-           processed_transactions_count: processed_transactions_count,
+           settled_transactions_count: settled_transactions_count,
            index: index
          } = data
        ) do
     result =
-      if processed_transactions_count == @max_transactions_processed_in_window and index > 2 do
+      if settled_transactions_count == @max_transactions_processed_in_window and index > 2 do
         {
           %{account | violations: ["high_frequency_small_interval" | account.violations]},
           %{transaction | rejected: true}

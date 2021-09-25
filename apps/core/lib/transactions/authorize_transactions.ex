@@ -63,18 +63,18 @@ defmodule Core.Transactions.AuthorizeTransactions do
 
       processed_transactions = history.transactions_log
 
-      case {transaction.is_processed, transaction.rejected,
+      case {transaction.is_settled, transaction.rejected,
             Ledger.check_limit(account, transaction)} do
         # if transaction has not been processed, so, will be
         {false, false, {%Account{} = new_account_movement, _}} ->
-          is_processed = if(new_account_movement.violations == [], do: true, else: false)
+          is_settled = if(new_account_movement.violations == [], do: true, else: false)
 
           Map.merge(
             history,
             %{
               account_movements_log: [new_account_movement | history.account_movements_log],
               transactions_log: [
-                %{transaction | is_processed: is_processed} | processed_transactions
+                %{transaction | is_settled: is_settled} | processed_transactions
               ]
             }
           )

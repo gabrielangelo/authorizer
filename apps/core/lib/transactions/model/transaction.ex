@@ -12,7 +12,7 @@ defmodule Core.Transactions.Model.Transaction do
     merchant
     amount
     time
-    is_processed
+    is_settled
     rejected
   >a
 
@@ -27,7 +27,7 @@ defmodule Core.Transactions.Model.Transaction do
     field(:merchant, :string)
     field(:amount, :integer)
     field(:time, :utc_datetime)
-    field(:is_processed, :boolean, virtual: true, default: false)
+    field(:is_settled, :boolean, virtual: true, default: false)
     field(:rejected, :boolean, virtual: true, default: false)
   end
 
