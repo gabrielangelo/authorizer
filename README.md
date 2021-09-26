@@ -1,4 +1,6 @@
 
+
+
 # Authorizer
 
 Uma CLI escrita em Elixir que autoriza transações para uma conta específica seguindo uma
@@ -133,8 +135,6 @@ Pode-se usar o arquivo `"operations_sample.json"` para um primeiro caso de teste
 
 A imagem pode ser visualizada localmente acessando arquivo assets/images/arch.png
 
-  
-
 1. Cli.Scripts.Authorizer: Cria uma coleção de dados (strings) lidas do stdin através do módulo Cli.Ports.Stdin;
 
 - O módulo Cli.Ports.Stdin é uma clara implementação de um conteito de Hexagonal architecture, que é o de Port-Adapters
@@ -187,41 +187,29 @@ A imagem pode ser visualizada localmente acessando arquivo assets/images/arch.pn
 
 - A arch foi concebida para ser basicamente um "map-reduce" de entradas que são escalonadas para diferentes processos que executam concorrentemente. A saída ( Accounts ) é um "reduce" dos outputs de cada processo. Função usada: [Task.async_stream/3](https://hexdocs.pm/elixir/1.12/Task.html#async_stream/3)
 
-- Cada instância Core.Transactions.AuthorizeTransactions é uma operação de batch que executa uma lista de transações de uma determinada conta. Ou seja, é escalonado um processo para
-
-cada conta e suas operações ( Seja autorização de transações ou criação de contas)
-
-  
-
-- Cada autorizador é um "pipeline" que compartilha uma esturutura definida abaixo:
-
-```elixir
-
-Core.Types.AuthorizeTransactionsHistory{
-
-account_movements_log: list(),
-
-transactions: list(),
-
-transactions_log: list(),
-
-settled_transactions_count: integer()
-
-}```
-
-`"account_movements_log"`: é a lista de movimenações bancárias realizadas por cada transação. O estado de cada movimentação com suas violações é guardado aqui;
-
-`"transactions"`: é a lista de transações, aqui não há alteração de estado, serve apenas para um parseamento primário;
-
-`"transactions_log"`: é a lista de transações processadas, essa lista é incrementada quando uma transação é liquidada ou rejeitada;
-
-`"settled_transactions_count"`: contador de transações liquidadas, usada na contagem de transações no apply de policy de janela de tempo.
-
-  
-
+- Cada instância Core.Transactions.AuthorizeTransactions é uma operação de batch que executa uma lista de transações de uma determinada conta. Ou seja, é escalonado um processo para cada conta e suas operações ( Seja autorização de transações ou criação de contas)
 - Geração de um **binário** que encapsula todo o software construído. É mais flexível para ambientes que não tem elixir instalado. Além disso, pode-se adiciona-lo no diretório /bin e usá-lo de qualquer outro dir do sistema operacional.
+ 
+- Cada autorizador é um "pipeline" que compartilha uma esturutura definida abaixo:
+	```elixir
+	Core.Types.AuthorizeTransactionsHistory{
+		account_movements_log: list(),
+		transactions: list(),
+		transactions_log: list(),
+		settled_transactions_count: integer()
+	}```
 
-- Pensando em alguns casos extremos, criei outra [branch](https://github.com/gabrielangelo/authorizer/tree/extreme_cases) que tenta lidar com alguns casos que julguei ser corner-casex, como um input de transações de dias/anos diferentes onde o authorizer deveria lidar com cada conjunto de transações de um período de forma cronológica aplicando as mesmas regras:
+- `"account_movements_log"`: é a lista de movimenações bancárias realizadas por cada transação. O estado de cada movimentação com suas violações é guardado aqui;
+
+- `"transactions"`: é a lista de transações, aqui não há alteração de estado, serve apenas para um parseamento primário;
+
+- `"transactions_log"`: é a lista de transações processadas, essa lista é incrementada quando uma transação é liquidada ou rejeitada;
+
+- `"settled_transactions_count"`: contador de transações liquidadas, usada na contagem de transações no apply de policy de janela de tempo.
+
+
+ **Nota Adicional** 
+ Pensando em alguns casos extremos, criei outra branch que tenta lidar com alguns casos que julguei ser corner-cases, como um input de transações de dias/anos diferentes onde o authorizer deveria lidar com cada conjunto de transações de um período de forma cronológica aplicando as mesmas regras:
 
 ```json
   # input
@@ -244,7 +232,8 @@ settled_transactions_count: integer()
  "{\"account\":{\"active-card\":true,\"available-limit\":40,\"violations\":[\"high_frequency_small_interval\"]}}",
  "{\"account\":{\"active-card\":true,\"available-limit\":30,\"violations\":[]}}",
  "{\"account\":{\"active-card\":true,\"available-limit\":40,\"violations\":[\"insufficient-limit\"]}}",
- "{\"account\":{\"active-card\":true,\"available-limit\":35,\"violations\":[\"doubled-transaction\",\"insufficient-limit\"]}}"]
+ "{\"account\":{\"active-card\":true,\"available-limit\":35,\"violations\":[\"doubled-transaction\",\"insufficient-limit\"]}}"]```
 ```
+Porém para manter a simplicidade do projeto e considerando que se trata de uma operação que envolvem liquidações instantâneas, talvez não faça sentido dar suporte a esse tipo de feature no momento, logo preferi não mergear com a master deixando em aberto para decisões futuras.
 
-Porém para manter a simplicidade do projeto e considerando que se trata de uma operação de cartão de crédito, talvez não faça sentido da suporte para esse tipo de feat no momento. Logo preferi não mergear com a master deixando em aberto para decisões futuras.
+
