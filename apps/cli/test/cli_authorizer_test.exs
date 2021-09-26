@@ -72,7 +72,7 @@ defmodule Cli.Test.CliAuthorizerTest do
            ] == Authorizer.main([])
   end
 
-  test "test account-not-initialized", %{time: time, now: now} do
+  test "test account-not-initialized case", %{time: time, now: now} do
     expect(StdinMock, :read_data, fn ->
       [
         "{\"transaction\": {\"merchant\": \"Uber Eats\", \"amount\": 25, \"time\": \"#{time}\"}}\n",
@@ -89,7 +89,7 @@ defmodule Cli.Test.CliAuthorizerTest do
              Authorizer.main([])
   end
 
-  test "test card not active", %{time: time, now: now} do
+  test "test card not active case", %{time: time, now: now} do
     expect(StdinMock, :read_data, fn ->
       [
         "{\"account\": {\"active-card\": false, \"available-limit\": 100}}\n",
@@ -108,7 +108,7 @@ defmodule Cli.Test.CliAuthorizerTest do
              Authorizer.main([])
   end
 
-  test "test insufficient-limit", %{time: time, now: now} do
+  test "test insufficient-limit case", %{time: time, now: now} do
     expect(StdinMock, :read_data, fn ->
       [
         "{\"account\": {\"active-card\": true, \"available-limit\": 1000}}\n",
@@ -127,7 +127,7 @@ defmodule Cli.Test.CliAuthorizerTest do
              Authorizer.main([])
   end
 
-  test "test high-frequency-small-interval", %{time: time, time_after: time_after} do
+  test "test high-frequency-small-interval case", %{time: time, time_after: time_after} do
     expect(StdinMock, :read_data, fn ->
       [
         "{\"account\": {\"active-card\": true, \"available-limit\": 100}}",
@@ -152,7 +152,7 @@ defmodule Cli.Test.CliAuthorizerTest do
              Authorizer.main([])
   end
 
-  test "test doubled-transaction", %{time: time} do
+  test "test doubled-transaction case", %{time: time} do
     expect(StdinMock, :read_data, fn ->
       [
         "{\"account\": {\"active-card\": true, \"available-limit\": 100}}",
@@ -173,7 +173,7 @@ defmodule Cli.Test.CliAuthorizerTest do
              Authorizer.main([])
   end
 
-  test "test multiple logics", %{time: time, time_after: time_after} do
+  test "test multiple logics case", %{time: time, time_after: time_after} do
     expect(StdinMock, :read_data, fn ->
       [
         "{\"account\": {\"active-card\": true, \"available-limit\": 100}}",
@@ -202,7 +202,7 @@ defmodule Cli.Test.CliAuthorizerTest do
              Authorizer.main([])
   end
 
-  test "test account-not-initialized case", %{time: time, time_after: time_after} do
+  test "test account-not-initialized case with multiple transactions", %{time: time, time_after: time_after} do
     expect(StdinMock, :read_data, fn ->
       [
         "{\"transaction\": {\"merchant\": \"McDonald's\", \"amount\": 10, \"time\": \"#{time}\"}}\n",
@@ -246,29 +246,6 @@ defmodule Cli.Test.CliAuthorizerTest do
              "{\"account\":{\"active-card\":true,\"available-limit\":1000,\"violations\":[\"insufficient-limit\"]}}",
              "{\"account\":{\"active-card\":true,\"available-limit\":200,\"violations\":[]}}",
              "{\"account\":{\"active-card\":true,\"available-limit\":120,\"violations\":[]}}"
-           ] ==
-             Authorizer.main([])
-  end
-
-  test "outside time" do
-    expect(StdinMock, :read_data, fn ->
-      [
-        "{\"account\": {\"active-card\": true, \"available-limit\": 100}}\n",
-        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 20, \"time\": \"2019-02-13T11:00:00.000Z\"}}\n",
-        "{\"transaction\": {\"merchant\": \"Habbib's\", \"amount\": 20, \"time\": \"2019-02-13T11:00:01.000Z\"}}\n",
-        "{\"transaction\": {\"merchant\": \"McDonald's\", \"amount\": 20, \"time\": \"2019-02-13T11:01:01.000Z\"}}\n",
-        "{\"transaction\": {\"merchant\": \"Subway\", \"amount\": 20, \"time\": \"2019-02-13T11:01:31.000Z\"}}\n",
-        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 10, \"time\": \"2019-02-13T12:00:00.000Z\"}}"
-      ]
-    end)
-
-    assert [
-             "{\"account\":{\"active-card\":true,\"available-limit\":100,\"violations\":[]}}",
-             "{\"account\":{\"active-card\":true,\"available-limit\":80,\"violations\":[]}}",
-             "{\"account\":{\"active-card\":true,\"available-limit\":60,\"violations\":[]}}",
-             "{\"account\":{\"active-card\":true,\"available-limit\":40,\"violations\":[]}}",
-             "{\"account\":{\"active-card\":true,\"available-limit\":40,\"violations\":[\"high_frequency_small_interval\"]}}",
-             "{\"account\":{\"active-card\":true,\"available-limit\":30,\"violations\":[]}}"
            ] ==
              Authorizer.main([])
   end
