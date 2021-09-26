@@ -41,7 +41,7 @@ defmodule Core.Transactions.AuthorizeTransactions do
   end
 
   defp process_transactions(account, transactions) do
-    # Mounts the data structure, this means like a 'history' of transactions
+    # build the data structure, this means like a 'history' of transactions
     data = %Core.Types.AuthorizeTransactionsHistory{
       account_movements_log: [account],
       transactions: transactions,

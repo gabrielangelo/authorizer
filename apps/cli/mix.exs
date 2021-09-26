@@ -32,7 +32,6 @@ defmodule Cli.MixProject do
       mod: {Cli.Application, []},
       escript: [
         main_module: Cli.Scripts.Authorizer,
-        comment: "A sample escript",
         name: :cli_authorizer
       ]
     ]

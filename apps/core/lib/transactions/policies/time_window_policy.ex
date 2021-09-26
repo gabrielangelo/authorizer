@@ -10,16 +10,11 @@ defmodule Core.Transactions.Policies.TimeWindow do
   @window_time_in_minutes 2
 
   @doc """
-    Process the transactions that are inside the window interval
-    the transactions_log is the list of operations rejected or processed.
-    account_movements_log is the list of each operation applied to an account, so each
-    account movement will be increased here.
-    transactions with status processed=true are operations settled
+    Process the transactions that are inside the window interval.
   """
   @spec apply(Core.Types.AuthorizeTransactionsHistory.t()) ::
-          AuthorizeTransactionsInput.t()
+          Core.Types.AuthorizeTransactionsHistory.t()
   def apply(data) do
-
     {initial_time, end_time, [transactions_in_last_minutes, transactions_out_of_time_window]} =
       get_transactions_within_time_interval(data.transactions)
 
@@ -37,7 +32,9 @@ defmodule Core.Transactions.Policies.TimeWindow do
   def get_transactions_within_time_interval(transactions) do
     [transaction | _] = transactions
     initial_time = transaction.time
-    end_time = DateTime.add(transaction.time, :timer.minutes(@window_time_in_minutes), :millisecond)
+
+    end_time =
+      DateTime.add(transaction.time, :timer.minutes(@window_time_in_minutes), :millisecond)
 
     items =
       Enum.reduce(
@@ -51,7 +48,9 @@ defmodule Core.Transactions.Policies.TimeWindow do
               ])
 
             false ->
-              Map.put(acc, :transactions_out_of_time_window, [transaction | acc.transactions_out_of_time_window])
+              Map.put(acc, :transactions_out_of_time_window, [
+                transaction | acc.transactions_out_of_time_window
+              ])
           end
         end
       )

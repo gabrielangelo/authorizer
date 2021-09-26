@@ -127,13 +127,11 @@ Pode-se usar o arquivo `"operations_sample.json"` para um primeiro caso de teste
 
 ## Organização dos módulos
 
-[comment]: <>  (A imagem pode ser visualizada localmente acessando arquivo assets/images/arch.png)
-
-![Arch_ER](https://github.com/gabrielangelo/authorizer/blob/master/assets/images/arch.png)
+A imagem da arch pode ser visualizada localmente acessando o path assets/images/arch.png)
 
 **Obs:**
 
-A imagem pode ser visualizada localmente acessando arquivo assets/images/arch.png
+A imagem pode ser visualizada localmente acessando arquivo assets/images/arch.png (Por questões de anonimidade não adicionei link)
 
 1. Cli.Scripts.Authorizer: Cria uma coleção de dados (strings) lidas do stdin através do módulo Cli.Ports.Stdin;
 
@@ -234,6 +232,4 @@ A imagem pode ser visualizada localmente acessando arquivo assets/images/arch.pn
  "{\"account\":{\"active-card\":true,\"available-limit\":40,\"violations\":[\"insufficient-limit\"]}}",
  "{\"account\":{\"active-card\":true,\"available-limit\":35,\"violations\":[\"doubled-transaction\",\"insufficient-limit\"]}}"]```
 ```
-Porém para manter a simplicidade do projeto e considerando que se trata de uma operação que envolvem liquidações instantâneas, talvez não faça sentido dar suporte a esse tipo de feature no momento, logo preferi não mergear com a master deixando em aberto para decisões futuras.
-
-
+Porém para manter a simplicidade do projeto e considerando que se trata de uma operação que envolvem liquidações instantâneas, talvez não faça sentido dar suporte a esse tipo de feature no momento, logo preferi não mergear com a master deixando em aberto para decisões futuras. Por outro lado, seria interessante lidar com esse tipo contexto em situações onde fosse necessário reprocessar transações antigas via message bus (um kafka por exemplo). Porém no momento temos um modelo genérico que processa em batch de transações de um mesmo dia sem levar em consideração a data de recebimento da mensagem.
