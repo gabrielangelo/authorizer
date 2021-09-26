@@ -247,5 +247,4 @@ settled_transactions_count: integer()
  "{\"account\":{\"active-card\":true,\"available-limit\":35,\"violations\":[\"doubled-transaction\",\"insufficient-limit\"]}}"]
 ```
 
-**Nota adicional:**
-Porém para manter a simplicidade do projeto e considerando que se trata de uma operação de cartão de crédito que exige janelas curtas de transferência de dados, talvez seja um pouco contraproducente adicionar mais complexidade para suportar essa feat no momento. Então preferi não mergear com a master deixando em aberto para decisões futuras.
+Porém para manter a simplicidade do projeto e considerando que se trata de uma operação de cartão de crédito, talvez não faça sentido da suporte para esse tipo de feat no momento. Logo preferi não mergear com a master deixando em aberto para decisões futuras.
