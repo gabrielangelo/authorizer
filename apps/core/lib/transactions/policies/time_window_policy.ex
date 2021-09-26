@@ -19,23 +19,19 @@ defmodule Core.Transactions.Policies.TimeWindow do
   @spec apply(Core.Types.AuthorizeTransactionsHistory.t()) ::
           AuthorizeTransactionsInput.t()
   def apply(data) do
-    data.transactions |> IO.inspect(label: :transactions)
+    data.transactions
     |> get_transactions_within_window_time([])
-    |> Enum.reverse()|> IO.inspect(label: :get_transactions_within_window_time)
-    |> Enum.reduce(data, fn item, history ->
+    |> Enum.with_index()
+    |> Enum.reduce(data, fn {item, index}, history ->
       case item do
         {initial_time, end_time, [transactions_in_last_minutes, transactions_out_of_time_window]}
-        when length(transactions_in_last_minutes) > 3 ->
-          # IO.inspect("processing")
-          # IO.inspect(transactions_in_last_minutes)
-
+        when index == 0 ->
           applied_data =
             history
             |> Map.put(:transactions, transactions_in_last_minutes)
             |> Map.put(:transactions_log, data.transactions_log)
             |> apply_policy(initial_time, end_time)
-
-          # IO.inspect(applied_data.transactions_log, label: :transactions_log)
+            |> Core.Transactions.AuthorizeTransactions.apply()
 
           Map.merge(history, %{
             transactions_log: applied_data.transactions_log ++ transactions_out_of_time_window,
@@ -86,21 +82,28 @@ defmodule Core.Transactions.Policies.TimeWindow do
     [transaction | _] = transactions
     initial_time = transaction.time
 
-    end_time =
+    end_window_time =
       DateTime.add(transaction.time, :timer.minutes(@window_time_in_minutes), :millisecond)
+
+    [date | _] = transaction.time |> DateTime.to_iso8601() |> String.split("T")
+
+    {:ok, end_time_day, _} = "#{date}T23:59:00.000000Z" |> DateTime.from_iso8601()
+
+    # end_time =
+    #   DateTime.add(transaction.time, :timer.minutes(@window_time_in_minutes), :millisecond)
 
     transactions_inside_time_window =
       Enum.reduce(
         transactions,
         %{transactions_in_last_minutes: [], transactions_out_of_time_window: []},
         fn transaction, acc ->
-          case is_inside_time_window?(initial_time, end_time, transaction.time) do
-            true ->
+          case DateTime.compare(transaction.time, end_time_day) do
+            result when result in [:eq, :lt] ->
               Map.put(acc, :transactions_in_last_minutes, [
                 transaction | acc.transactions_in_last_minutes
               ])
 
-            false ->
+            _ ->
               Map.put(acc, :transactions_out_of_time_window, [
                 transaction | acc.transactions_out_of_time_window
               ])
@@ -109,7 +112,7 @@ defmodule Core.Transactions.Policies.TimeWindow do
       )
       |> Enum.map(fn {_, list} -> Enum.reverse(list) end)
 
-    {initial_time, end_time, transactions_inside_time_window}
+    {initial_time, end_window_time, transactions_inside_time_window}
   end
 
   defp apply_policy(data, time_ago, now) do
@@ -122,8 +125,9 @@ defmodule Core.Transactions.Policies.TimeWindow do
         # increased transactions
         processed_transactions = history.transactions_log
 
-        case Ledger.check_limit(account, transaction) do
-          {%Account{violations: _} = new_account_movement, transaction_processed} ->
+        case {is_inside_time_window?(time_ago, now, transaction.time),
+              Ledger.check_limit(account, transaction)} do
+          {true, {%Account{violations: _} = new_account_movement, transaction_processed}} ->
             # apply time window policy
             {%Account{violations: violations} = applied_account_movement, transaction} =
               %{
@@ -161,6 +165,9 @@ defmodule Core.Transactions.Policies.TimeWindow do
                 settled_transactions_count: history.settled_transactions_count + 1
               })
             end
+
+          _ ->
+            Map.put(history, :transactions_log, [transaction | history.transactions_log])
         end
     end)
   end

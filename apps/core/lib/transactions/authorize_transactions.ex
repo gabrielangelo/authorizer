@@ -56,7 +56,7 @@ defmodule Core.Transactions.AuthorizeTransactions do
     {:ok, result}
   end
 
-  defp apply(data) do
+  def apply(data) do
     data.transactions_log
     |> Enum.reduce(data, fn transaction, history ->
       [account | _] = history.account_movements_log
