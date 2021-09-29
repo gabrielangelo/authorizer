@@ -285,18 +285,22 @@ defmodule Cli.Test.CliAuthorizerTest do
         "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 190, \"time\": \"#{now}\"}}\n",
         "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 5, \"time\": \"#{now}\"}}\n",
         "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 150, \"time\": \"#{now}\"}}\n",
-        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 190, \"time\": \"#{now}\"}}\n",
+        "{\"transaction\": {\"merchant\": \"Burger King\", \"amount\": 190, \"time\": \"#{now}\"}}\n"
       ]
     end)
 
-    # assert [
-    #          "{\"account\":{\"active-card\":true,\"available-limit\":100,\"violations\":[]}}",
-    #          "{\"account\":{\"active-card\":true,\"available-limit\":80,\"violations\":[]}}",
-    #          "{\"account\":{\"active-card\":true,\"available-limit\":60,\"violations\":[]}}",
-    #          "{\"account\":{\"active-card\":true,\"available-limit\":40,\"violations\":[]}}",
-    #          "{\"account\":{\"active-card\":true,\"available-limit\":40,\"violations\":[\"high_frequency_small_interval\"]}}",
-    #          "{\"account\":{\"active-card\":true,\"available-limit\":30,\"violations\":[]}}"
-    #        ] ==
-             Authorizer.main([]) |> IO.inspect()
+    assert [
+             "{\"account\":{\"active-card\":true,\"available-limit\":100,\"violations\":[]}}",
+             "{\"account\":{\"active-card\":true,\"available-limit\":80,\"violations\":[]}}",
+             "{\"account\":{\"active-card\":true,\"available-limit\":60,\"violations\":[]}}",
+             "{\"account\":{\"active-card\":true,\"available-limit\":40,\"violations\":[]}}",
+             "{\"account\":{\"active-card\":true,\"available-limit\":40,\"violations\":[\"high_frequency_small_interval\"]}}",
+             "{\"account\":{\"active-card\":true,\"available-limit\":30,\"violations\":[]}}",
+             "{\"account\":{\"active-card\":true,\"available-limit\":30,\"violations\":[\"insufficient-limit\"]}}",
+             "{\"account\":{\"active-card\":true,\"available-limit\":25,\"violations\":[]}}",
+             "{\"account\":{\"active-card\":true,\"available-limit\":25,\"violations\":[\"insufficient-limit\"]}}",
+             "{\"account\":{\"active-card\":true,\"available-limit\":25,\"violations\":[\"doubled-transaction\",\"insufficient-limit\"]}}"
+           ] ==
+             Authorizer.main([])
   end
 end

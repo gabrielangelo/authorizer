@@ -1,10 +1,10 @@
-defmodule Core.Transactions.Policies.TimeWindow do
+defmodule Core.Transactions.Policies.TimeWindowPolicy do
   @moduledoc """
     Time window policy
   """
-
   alias Core.Accounts.Model.Account
   alias Core.Ledger
+  alias Core.Transactions.Policies.ProcessSettlementsPolicy
 
   @max_transactions_processed_in_window 3
   @window_time_in_minutes 2
@@ -19,19 +19,21 @@ defmodule Core.Transactions.Policies.TimeWindow do
   @spec apply(Core.Types.AuthorizeTransactionsHistory.t()) ::
           AuthorizeTransactionsInput.t()
   def apply(data) do
-    data.transactions
-    |> get_transactions_within_window_time([])
-    |> Enum.with_index()
+    splited_data_by_periods = get_transactions_within_window_time(data.transactions, [])
+    len_splited_data_by_periods = length(splited_data_by_periods)
+
+    splited_data_by_periods
+    |> Enum.with_index(1)
     |> Enum.reduce(data, fn {item, index}, history ->
       case item do
-        {initial_time, end_time, [transactions_in_last_minutes, transactions_out_of_time_window]}
-        when index == 0 ->
+        {initial_time, end_time, [transactions_in_last_minutes, transactions_out_of_time_window]} ->
           applied_data =
             history
             |> Map.put(:transactions, transactions_in_last_minutes)
             |> Map.put(:transactions_log, data.transactions_log)
             |> apply_policy(initial_time, end_time)
-            |> Core.Transactions.AuthorizeTransactions.apply()
+
+          applied_data = apply_authorizer(applied_data, index, len_splited_data_by_periods)
 
           Map.merge(history, %{
             transactions_log: applied_data.transactions_log ++ transactions_out_of_time_window,
@@ -48,20 +50,13 @@ defmodule Core.Transactions.Policies.TimeWindow do
           history |> Map.put(:transactions_log, transactions_log)
       end
     end)
-
-    # {initial_time, end_time, [transactions_in_last_minutes, transactions_out_of_time_window]} =
-    #   get_transactions_within_time_interval(data.transactions)
-
-    # applied_data =
-    #   data
-    #   |> Map.put(:transactions, transactions_in_last_minutes)
-    #   |> apply_policy(initial_time, end_time)
-
-    # Map.merge(data, %{
-    #   transactions_log: applied_data.transactions_log ++ transactions_out_of_time_window,
-    #   account_movements_log: applied_data.account_movements_log
-    # })
   end
+
+  defp apply_authorizer(data, index, len_splited_data_by_periods)
+       when index < len_splited_data_by_periods,
+       do: ProcessSettlementsPolicy.apply(data)
+
+  defp apply_authorizer(data, _, _), do: data
 
   defp get_transactions_within_window_time(transactions, items) do
     case get_transactions_within_time_interval(transactions) do
@@ -88,9 +83,6 @@ defmodule Core.Transactions.Policies.TimeWindow do
     [date | _] = transaction.time |> DateTime.to_iso8601() |> String.split("T")
 
     {:ok, end_time_day, _} = "#{date}T23:59:00.000000Z" |> DateTime.from_iso8601()
-
-    # end_time =
-    #   DateTime.add(transaction.time, :timer.minutes(@window_time_in_minutes), :millisecond)
 
     transactions_inside_time_window =
       Enum.reduce(
