@@ -177,7 +177,7 @@ Local:
 
   
 
--  ``` $ authorizer < {file}.json```
+-  ``` $ ./authorizer < {file}.json```
 
   
 
