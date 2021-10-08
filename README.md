@@ -294,7 +294,7 @@ A imagem pode ser visualizada localmente acessando arquivo assets/images/arch.pn
 
 ## Nota sobre algumas decisões técnicas
 
-  
+  ![Modelo_ER](https://github.com/gabrielangelo/authorizer/blob/master/assets/images/arch.png)
 
 - Uso da linguagem de programação erlang/elixir para uso [BEAM](https://blog.erlang.org/a-brief-BEAM-primer/) em uma aplicação financeira.
 
