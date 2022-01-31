@@ -76,7 +76,7 @@ Assuming you already have Docker and Docker Compose installed, run the command b
 
   
 
-## Testes
+## Tests
 
   
 
@@ -139,7 +139,7 @@ Docker:
 
   
 
-## Gerando o authorizer bin
+## Generatinng the authorizer bin
 
   
 
@@ -167,7 +167,7 @@ The`"authorizer"` is already automatically generated inside the container after 
 
   
 
-## Execução
+## Execution
 
   
 
@@ -201,7 +201,7 @@ You can use the `"operations_sample.json"` file for a first test case.
 
   
 
-## Organização dos módulos
+## Module's Organization
 
   
 
